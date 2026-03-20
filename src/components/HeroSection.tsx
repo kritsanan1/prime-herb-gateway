@@ -1,12 +1,8 @@
 import { motion } from 'framer-motion';
-import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { ArrowRight, ShieldCheck } from 'lucide-react';
-import heroBg from '@/assets/hero-bg.jpg';
 
 export default function HeroSection() {
-  const navigate = useNavigate();
-
   const scrollToProducts = () => {
     document.getElementById('products')?.scrollIntoView({ behavior: 'smooth' });
   };
@@ -15,9 +11,14 @@ export default function HeroSection() {
     <section className="relative min-h-screen flex items-center justify-center overflow-hidden">
       <div
         className="absolute inset-0 bg-cover bg-center"
-        style={{ backgroundImage: `url(${heroBg})` }}
+        style={{ backgroundImage: `url(/images/hero-bg.png)` }}
       />
-      <div className="absolute inset-0 bg-background/70" />
+      <div className="absolute inset-0 bg-background/60" />
+
+      {/* Gold banner overlay */}
+      <div className="absolute inset-0 flex items-center justify-center opacity-15 pointer-events-none">
+        <img src="/images/hero-banner.png" alt="" className="max-w-3xl w-full object-contain" />
+      </div>
 
       <div className="container relative z-10 py-32 md:py-40">
         <div className="max-w-2xl mx-auto text-center">

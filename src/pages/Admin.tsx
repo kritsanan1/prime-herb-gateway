@@ -1,50 +1,105 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
-import { useOrders } from '@/contexts/OrderContext';
-import { Order, OrderStatus, ORDER_STATUS_LABELS, PAYMENT_METHOD_LABELS } from '@/types';
+import { useOrders, Order, OrderStatus } from '@/contexts/OrderContext';
+import { useAuth } from '@/contexts/AuthContext';
+import { ORDER_STATUS_LABELS, PAYMENT_METHOD_LABELS } from '@/types';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Package, Users, DollarSign, Eye, ChevronLeft, BarChart3, Lock, ShoppingBag, Settings } from 'lucide-react';
+import { Package, Users, DollarSign, Eye, ChevronLeft, BarChart3, Lock, ShoppingBag, Settings, LogOut, Loader2 } from 'lucide-react';
 
-function AdminLogin({ onLogin }: { onLogin: () => void }) {
+function AdminLogin() {
+  const { signIn, signUp } = useAuth();
+  const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [error, setError] = useState(false);
+  const [displayName, setDisplayName] = useState('');
+  const [error, setError] = useState('');
+  const [mode, setMode] = useState<'login' | 'register'>('login');
+  const [loading, setLoading] = useState(false);
+  const [registered, setRegistered] = useState(false);
 
-  const handleLogin = () => {
-    // Mock admin password - in production, use proper auth
-    if (password === 'admin1234') {
-      onLogin();
+  const handleSubmit = async () => {
+    if (!email || !password) return;
+    setLoading(true);
+    setError('');
+
+    if (mode === 'login') {
+      const { error } = await signIn(email, password);
+      if (error) setError(error);
     } else {
-      setError(true);
+      const { error } = await signUp(email, password, displayName);
+      if (error) {
+        setError(error);
+      } else {
+        setRegistered(true);
+      }
     }
+    setLoading(false);
   };
+
+  if (registered) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-background">
+        <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} className="bg-gradient-card border border-border rounded-xl p-8 max-w-sm w-full shadow-card text-center">
+          <Lock className="w-10 h-10 text-primary mx-auto mb-3" />
+          <h1 className="text-xl font-display font-bold text-foreground mb-2">ลงทะเบียนสำเร็จ</h1>
+          <p className="text-xs text-muted-foreground font-thai mb-4">กรุณาตรวจสอบอีเมลเพื่อยืนยันบัญชี จากนั้นเข้าสู่ระบบอีกครั้ง</p>
+          <Button onClick={() => { setMode('login'); setRegistered(false); }} className="w-full bg-gradient-gold text-primary-foreground font-thai font-semibold">
+            กลับไปหน้าเข้าสู่ระบบ
+          </Button>
+        </motion.div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-background">
       <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} className="bg-gradient-card border border-border rounded-xl p-8 max-w-sm w-full shadow-card">
         <div className="text-center mb-6">
           <Lock className="w-10 h-10 text-primary mx-auto mb-3" />
-          <h1 className="text-xl font-display font-bold text-foreground">Admin Access</h1>
-          <p className="text-xs text-muted-foreground font-thai mt-1">เข้าสู่ระบบจัดการหลังบ้าน</p>
+          <h1 className="text-xl font-display font-bold text-foreground">
+            {mode === 'login' ? 'Admin Access' : 'สมัครบัญชี Admin'}
+          </h1>
+          <p className="text-xs text-muted-foreground font-thai mt-1">
+            {mode === 'login' ? 'เข้าสู่ระบบจัดการหลังบ้าน' : 'สร้างบัญชีสำหรับผู้ดูแลระบบ'}
+          </p>
         </div>
         <div className="space-y-4">
+          {mode === 'register' && (
+            <Input
+              value={displayName}
+              onChange={e => setDisplayName(e.target.value)}
+              placeholder="ชื่อที่แสดง"
+              className="bg-secondary border-border font-thai"
+            />
+          )}
+          <Input
+            type="email"
+            value={email}
+            onChange={e => { setEmail(e.target.value); setError(''); }}
+            placeholder="อีเมล"
+            className="bg-secondary border-border font-thai"
+          />
           <Input
             type="password"
             value={password}
-            onChange={e => { setPassword(e.target.value); setError(false); }}
-            onKeyDown={e => e.key === 'Enter' && handleLogin()}
+            onChange={e => { setPassword(e.target.value); setError(''); }}
+            onKeyDown={e => e.key === 'Enter' && handleSubmit()}
             placeholder="รหัสผ่าน"
             className="bg-secondary border-border font-thai"
           />
-          {error && <p className="text-xs text-destructive font-thai">รหัสผ่านไม่ถูกต้อง</p>}
-          <Button onClick={handleLogin} className="w-full bg-gradient-gold text-primary-foreground font-thai font-semibold">
-            เข้าสู่ระบบ
+          {error && <p className="text-xs text-destructive font-thai">{error}</p>}
+          <Button onClick={handleSubmit} disabled={loading} className="w-full bg-gradient-gold text-primary-foreground font-thai font-semibold">
+            {loading && <Loader2 className="w-4 h-4 animate-spin mr-2" />}
+            {mode === 'login' ? 'เข้าสู่ระบบ' : 'สมัครบัญชี'}
           </Button>
-          <p className="text-[10px] text-muted-foreground font-thai text-center">
-            Demo password: admin1234
-          </p>
+          <button
+            onClick={() => { setMode(mode === 'login' ? 'register' : 'login'); setError(''); }}
+            className="w-full text-xs text-muted-foreground hover:text-primary font-thai transition-colors"
+          >
+            {mode === 'login' ? 'ยังไม่มีบัญชี? สมัครที่นี่' : 'มีบัญชีแล้ว? เข้าสู่ระบบ'}
+          </button>
         </div>
       </motion.div>
     </div>
@@ -54,14 +109,44 @@ function AdminLogin({ onLogin }: { onLogin: () => void }) {
 type Tab = 'overview' | 'orders' | 'products' | 'customers';
 
 export default function AdminPage() {
-  const [authenticated, setAuthenticated] = useState(false);
+  const { user, isAdmin, loading: authLoading, signOut } = useAuth();
   const [tab, setTab] = useState<Tab>('overview');
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
-  const { orders, updateOrderStatus } = useOrders();
+  const { orders, updateOrderStatus, refreshOrders, loading: ordersLoading } = useOrders();
   const navigate = useNavigate();
 
-  if (!authenticated) {
-    return <AdminLogin onLogin={() => setAuthenticated(true)} />;
+  useEffect(() => {
+    if (user && isAdmin) {
+      refreshOrders();
+    }
+  }, [user, isAdmin, refreshOrders]);
+
+  if (authLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-background">
+        <Loader2 className="w-8 h-8 text-primary animate-spin" />
+      </div>
+    );
+  }
+
+  if (!user) {
+    return <AdminLogin />;
+  }
+
+  if (!isAdmin) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-background">
+        <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} className="bg-gradient-card border border-border rounded-xl p-8 max-w-sm w-full shadow-card text-center">
+          <Lock className="w-10 h-10 text-destructive mx-auto mb-3" />
+          <h1 className="text-xl font-display font-bold text-foreground mb-2">ไม่มีสิทธิ์เข้าถึง</h1>
+          <p className="text-xs text-muted-foreground font-thai mb-4">บัญชีนี้ไม่มีสิทธิ์ admin กรุณาติดต่อผู้ดูแลระบบ</p>
+          <div className="flex gap-2">
+            <Button onClick={() => navigate('/')} variant="outline" className="flex-1 border-border text-muted-foreground font-thai text-xs">กลับหน้าเว็บ</Button>
+            <Button onClick={signOut} variant="outline" className="flex-1 border-border text-muted-foreground font-thai text-xs">ออกจากระบบ</Button>
+          </div>
+        </motion.div>
+      </div>
+    );
   }
 
   const totalRevenue = orders.filter(o => o.paymentStatus === 'paid').reduce((sum, o) => sum + o.total, 0);
@@ -77,21 +162,23 @@ export default function AdminPage() {
 
   return (
     <div className="min-h-screen bg-background">
-      {/* Admin Header */}
       <header className="border-b border-border bg-card px-6 py-4 flex items-center justify-between">
         <div className="flex items-center gap-3">
           <span className="font-display font-bold text-gradient-gold">Dr.Arty</span>
           <span className="text-xs text-muted-foreground font-thai">Admin Dashboard</span>
         </div>
         <div className="flex items-center gap-3">
+          <span className="text-xs text-muted-foreground font-thai hidden sm:inline">{user.email}</span>
           <Button variant="outline" size="sm" onClick={() => navigate('/')} className="text-xs font-thai border-border text-muted-foreground">
             <ChevronLeft className="w-3 h-3 mr-1" /> กลับหน้าเว็บ
+          </Button>
+          <Button variant="outline" size="sm" onClick={signOut} className="text-xs font-thai border-border text-destructive">
+            <LogOut className="w-3 h-3 mr-1" /> ออกจากระบบ
           </Button>
         </div>
       </header>
 
       <div className="flex">
-        {/* Sidebar */}
         <aside className="w-56 border-r border-border min-h-[calc(100vh-57px)] p-4 hidden md:block">
           <nav className="space-y-1">
             {TABS.map(t => (
@@ -109,7 +196,6 @@ export default function AdminPage() {
           </nav>
         </aside>
 
-        {/* Mobile tabs */}
         <div className="md:hidden border-b border-border bg-card flex overflow-x-auto fixed top-[57px] left-0 right-0 z-10">
           {TABS.map(t => (
             <button
@@ -125,7 +211,6 @@ export default function AdminPage() {
           ))}
         </div>
 
-        {/* Content */}
         <main className="flex-1 p-6 md:p-8 mt-12 md:mt-0">
           {tab === 'overview' && (
             <div className="space-y-6">
@@ -147,11 +232,11 @@ export default function AdminPage() {
                   <p className="text-2xl font-display font-bold text-foreground">{uniqueCustomers}</p>
                 </div>
               </div>
-
-              {/* Recent orders */}
               <div>
                 <h3 className="text-lg font-display font-bold text-foreground mb-4">ออเดอร์ล่าสุด</h3>
-                {orders.length === 0 ? (
+                {ordersLoading ? (
+                  <div className="flex justify-center py-8"><Loader2 className="w-6 h-6 text-primary animate-spin" /></div>
+                ) : orders.length === 0 ? (
                   <p className="text-muted-foreground font-thai text-sm">ยังไม่มีออเดอร์</p>
                 ) : (
                   <div className="space-y-2">
@@ -232,7 +317,6 @@ export default function AdminPage() {
               <button onClick={() => setSelectedOrder(null)} className="flex items-center gap-1 text-sm text-muted-foreground hover:text-primary font-thai">
                 <ChevronLeft className="w-4 h-4" /> กลับ
               </button>
-
               <div className="bg-gradient-card border border-border rounded-xl p-6 shadow-card space-y-6">
                 <div className="flex items-center justify-between">
                   <div>
@@ -258,7 +342,6 @@ export default function AdminPage() {
                     </SelectContent>
                   </Select>
                 </div>
-
                 <div className="grid sm:grid-cols-2 gap-6">
                   <div>
                     <h4 className="text-sm font-thai font-medium text-foreground mb-3">ข้อมูลลูกค้า</h4>
@@ -278,13 +361,12 @@ export default function AdminPage() {
                     </div>
                   </div>
                 </div>
-
                 <div>
                   <h4 className="text-sm font-thai font-medium text-foreground mb-3">สินค้า</h4>
-                  {selectedOrder.items.map(item => (
-                    <div key={item.product.id} className="flex justify-between text-sm font-thai py-2 border-b border-border/50">
-                      <span className="text-foreground">{item.product.name} x{item.quantity}</span>
-                      <span className="text-foreground">฿{(item.product.price * item.quantity).toLocaleString()}</span>
+                  {selectedOrder.items.map((item: any) => (
+                    <div key={item.product?.id || Math.random()} className="flex justify-between text-sm font-thai py-2 border-b border-border/50">
+                      <span className="text-foreground">{item.product?.name} x{item.quantity}</span>
+                      <span className="text-foreground">฿{((item.product?.price || 0) * item.quantity).toLocaleString()}</span>
                     </div>
                   ))}
                   <div className="pt-3 space-y-1 text-sm font-thai">
@@ -307,7 +389,7 @@ export default function AdminPage() {
                 </Button>
               </div>
               <div className="bg-gradient-card border border-border rounded-xl p-6 shadow-card">
-                <p className="text-xs text-muted-foreground font-thai mb-4">สินค้าปัจจุบัน (1 รายการ) — พร้อมเชื่อมต่อฐานข้อมูลจริง</p>
+                <p className="text-xs text-muted-foreground font-thai mb-4">สินค้าปัจจุบัน — ข้อมูลจากฐานข้อมูล Lovable Cloud</p>
                 <table className="w-full text-sm">
                   <thead>
                     <tr className="border-b border-border text-muted-foreground font-thai text-xs">
