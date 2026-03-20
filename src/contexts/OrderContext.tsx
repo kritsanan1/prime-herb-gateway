@@ -116,9 +116,9 @@ export const OrderProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       shipping,
       discount,
       total,
-      status: 'pending' as const,
-      payment_method: paymentMethod as const,
-      payment_status: 'pending' as const,
+      status: 'pending' as any,
+      payment_method: paymentMethod as any,
+      payment_status: 'pending' as any,
     }).select().single();
 
     if (error) throw error;
