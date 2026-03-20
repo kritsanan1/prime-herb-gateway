@@ -1,14 +1,36 @@
 import React, { createContext, useContext, useState, useCallback, useEffect } from 'react';
-import { Order, OrderStatus, CartItem, CustomerInfo, PaymentMethod } from '@/types';
+import { supabase } from '@/integrations/supabase/client';
+import { CartItem, CustomerInfo, PaymentMethod } from '@/types';
+
+export type OrderStatus = 'pending' | 'paid' | 'processing' | 'shipping' | 'delivered' | 'failed' | 'refunded';
+
+export interface Order {
+  id: string;
+  orderNumber: string;
+  items: CartItem[];
+  customer: CustomerInfo;
+  subtotal: number;
+  shipping: number;
+  discount: number;
+  total: number;
+  status: OrderStatus;
+  paymentMethod: PaymentMethod;
+  paymentStatus: 'pending' | 'paid' | 'failed' | 'refunded';
+  createdAt: string;
+  updatedAt: string;
+  trackingNumber?: string;
+}
 
 interface OrderContextType {
   orders: Order[];
-  createOrder: (items: CartItem[], customer: CustomerInfo, paymentMethod: PaymentMethod, subtotal: number, shipping: number, discount: number) => Order;
+  loading: boolean;
+  createOrder: (items: CartItem[], customer: CustomerInfo, paymentMethod: PaymentMethod, subtotal: number, shipping: number, discount: number) => Promise<Order>;
   getOrder: (orderNumber: string) => Order | undefined;
-  findOrder: (orderNumber: string, contact: string) => Order | undefined;
-  updateOrderStatus: (orderId: string, status: OrderStatus) => void;
+  findOrder: (orderNumber: string, contact: string) => Promise<Order | undefined>;
+  updateOrderStatus: (orderId: string, status: OrderStatus) => Promise<void>;
   updatePaymentStatus: (orderId: string, status: 'pending' | 'paid' | 'failed' | 'refunded') => void;
   simulatePayment: (orderId: string) => Promise<boolean>;
+  refreshOrders: () => Promise<void>;
 }
 
 const OrderContext = createContext<OrderContextType | undefined>(undefined);
@@ -20,42 +42,88 @@ function generateOrderNumber(): string {
   return `${prefix}${ts}${rand}`;
 }
 
+function dbRowToOrder(row: any): Order {
+  return {
+    id: row.id,
+    orderNumber: row.order_number,
+    items: (row.items || []) as CartItem[],
+    customer: {
+      name: row.customer_name,
+      phone: row.customer_phone,
+      email: row.customer_email,
+      address: row.customer_address,
+      province: row.province,
+      postalCode: row.postal_code,
+      note: row.note || '',
+      couponCode: row.coupon_code || '',
+    },
+    subtotal: row.subtotal,
+    shipping: row.shipping,
+    discount: row.discount,
+    total: row.total,
+    status: row.status as OrderStatus,
+    paymentMethod: row.payment_method as PaymentMethod,
+    paymentStatus: row.payment_status as 'pending' | 'paid' | 'failed' | 'refunded',
+    createdAt: row.created_at,
+    updatedAt: row.updated_at,
+    trackingNumber: row.tracking_number,
+  };
+}
+
 export const OrderProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [orders, setOrders] = useState<Order[]>(() => {
-    try {
-      const stored = localStorage.getItem('orders');
-      return stored ? JSON.parse(stored) : [];
-    } catch { return []; }
-  });
+  const [orders, setOrders] = useState<Order[]>([]);
+  const [loading, setLoading] = useState(false);
+
+  const refreshOrders = useCallback(async () => {
+    setLoading(true);
+    const { data } = await supabase
+      .from('orders')
+      .select('*')
+      .order('created_at', { ascending: false });
+    if (data) {
+      setOrders(data.map(dbRowToOrder));
+    }
+    setLoading(false);
+  }, []);
 
   useEffect(() => {
-    localStorage.setItem('orders', JSON.stringify(orders));
-  }, [orders]);
+    refreshOrders();
+  }, [refreshOrders]);
 
-  const createOrder = useCallback((
+  const createOrder = useCallback(async (
     items: CartItem[],
     customer: CustomerInfo,
     paymentMethod: PaymentMethod,
     subtotal: number,
     shipping: number,
     discount: number,
-  ): Order => {
-    const now = new Date().toISOString();
-    const order: Order = {
-      id: crypto.randomUUID(),
-      orderNumber: generateOrderNumber(),
-      items,
-      customer,
+  ): Promise<Order> => {
+    const orderNumber = generateOrderNumber();
+    const total = subtotal + shipping - discount;
+
+    const { data, error } = await supabase.from('orders').insert({
+      order_number: orderNumber,
+      items: items as any,
+      customer_name: customer.name,
+      customer_phone: customer.phone,
+      customer_email: customer.email,
+      customer_address: customer.address,
+      province: customer.province,
+      postal_code: customer.postalCode,
+      note: customer.note,
+      coupon_code: customer.couponCode,
       subtotal,
       shipping,
       discount,
-      total: subtotal + shipping - discount,
-      status: 'pending',
-      paymentMethod,
-      paymentStatus: 'pending',
-      createdAt: now,
-      updatedAt: now,
-    };
+      total,
+      status: 'pending' as const,
+      payment_method: paymentMethod as const,
+      payment_status: 'pending' as const,
+    }).select().single();
+
+    if (error) throw error;
+
+    const order = dbRowToOrder(data);
     setOrders(prev => [order, ...prev]);
     return order;
   }, []);
@@ -64,31 +132,35 @@ export const OrderProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     return orders.find(o => o.orderNumber === orderNumber);
   }, [orders]);
 
-  const findOrder = useCallback((orderNumber: string, contact: string) => {
-    return orders.find(o =>
-      o.orderNumber.toLowerCase() === orderNumber.toLowerCase() &&
-      (o.customer.phone === contact || o.customer.email.toLowerCase() === contact.toLowerCase())
-    );
-  }, [orders]);
+  const findOrder = useCallback(async (orderNumber: string, contact: string): Promise<Order | undefined> => {
+    const { data } = await supabase
+      .from('orders')
+      .select('*')
+      .ilike('order_number', orderNumber)
+      .or(`customer_phone.eq.${contact},customer_email.ilike.${contact}`)
+      .maybeSingle();
+    return data ? dbRowToOrder(data) : undefined;
+  }, []);
 
-  const updateOrderStatus = useCallback((orderId: string, status: OrderStatus) => {
+  const updateOrderStatus = useCallback(async (orderId: string, status: OrderStatus) => {
+    await supabase.from('orders').update({ status: status as any }).eq('id', orderId);
     setOrders(prev => prev.map(o =>
       o.id === orderId ? { ...o, status, updatedAt: new Date().toISOString() } : o
     ));
   }, []);
 
   const updatePaymentStatus = useCallback((orderId: string, status: 'pending' | 'paid' | 'failed' | 'refunded') => {
+    const newStatus: OrderStatus = status === 'paid' ? 'paid' : status === 'failed' ? 'failed' : status === 'refunded' ? 'refunded' : 'pending';
+    supabase.from('orders').update({ payment_status: status as any, status: newStatus as any }).eq('id', orderId);
     setOrders(prev => prev.map(o => {
       if (o.id !== orderId) return o;
-      const newStatus: OrderStatus = status === 'paid' ? 'paid' : status === 'failed' ? 'failed' : status === 'refunded' ? 'refunded' : o.status;
       return { ...o, paymentStatus: status, status: newStatus, updatedAt: new Date().toISOString() };
     }));
   }, []);
 
   const simulatePayment = useCallback(async (orderId: string): Promise<boolean> => {
-    // Simulate payment processing delay
     await new Promise(resolve => setTimeout(resolve, 2500));
-    const success = Math.random() > 0.1; // 90% success rate
+    const success = Math.random() > 0.1;
     if (success) {
       updatePaymentStatus(orderId, 'paid');
     } else {
@@ -98,7 +170,7 @@ export const OrderProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   }, [updatePaymentStatus]);
 
   return (
-    <OrderContext.Provider value={{ orders, createOrder, getOrder, findOrder, updateOrderStatus, updatePaymentStatus, simulatePayment }}>
+    <OrderContext.Provider value={{ orders, loading, createOrder, getOrder, findOrder, updateOrderStatus, updatePaymentStatus, simulatePayment, refreshOrders }}>
       {children}
     </OrderContext.Provider>
   );

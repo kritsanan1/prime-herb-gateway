@@ -56,15 +56,20 @@ export default function CheckoutPage() {
     setStep('processing');
     setProcessing(true);
 
-    const order = createOrder(items, form, paymentMethod, subtotal, shipping, discount);
+    try {
+      const order = await createOrder(items, form, paymentMethod, subtotal, shipping, discount);
+      const success = await simulatePayment(order.id);
+      clearCart();
 
-    const success = await simulatePayment(order.id);
-    clearCart();
-
-    if (success) {
-      navigate(`/order-success/${order.orderNumber}`);
-    } else {
-      navigate(`/order-success/${order.orderNumber}?status=failed`);
+      if (success) {
+        navigate(`/order-success/${order.orderNumber}`);
+      } else {
+        navigate(`/order-success/${order.orderNumber}?status=failed`);
+      }
+    } catch (err) {
+      console.error('Order creation failed:', err);
+      setStep('payment');
+      setProcessing(false);
     }
   };
 
@@ -106,7 +111,6 @@ export default function CheckoutPage() {
           ) : (
             <div className="grid lg:grid-cols-5 gap-8">
               <div className="lg:col-span-3 space-y-6">
-                {/* Steps indicator */}
                 <div className="flex items-center gap-2 mb-8">
                   <button onClick={() => setStep('info')} className={`px-4 py-2 rounded-full text-xs font-thai font-medium transition-colors ${step === 'info' ? 'bg-gradient-gold text-primary-foreground' : 'bg-secondary text-muted-foreground'}`}>
                     1. ข้อมูลจัดส่ง
@@ -120,7 +124,6 @@ export default function CheckoutPage() {
                 {step === 'info' && (
                   <motion.div initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} className="space-y-4">
                     <h2 className="text-xl font-display font-bold text-foreground">ข้อมูลการจัดส่ง</h2>
-
                     <div className="grid sm:grid-cols-2 gap-4">
                       <div className="space-y-2">
                         <Label className="text-xs font-thai text-muted-foreground">ชื่อ-นามสกุล *</Label>
@@ -131,17 +134,14 @@ export default function CheckoutPage() {
                         <Input value={form.phone} onChange={e => updateField('phone', e.target.value)} placeholder="08X-XXX-XXXX" className="bg-secondary border-border font-thai" />
                       </div>
                     </div>
-
                     <div className="space-y-2">
                       <Label className="text-xs font-thai text-muted-foreground">อีเมล *</Label>
                       <Input value={form.email} onChange={e => updateField('email', e.target.value)} type="email" placeholder="email@example.com" className="bg-secondary border-border font-thai" />
                     </div>
-
                     <div className="space-y-2">
                       <Label className="text-xs font-thai text-muted-foreground">ที่อยู่จัดส่ง *</Label>
                       <Textarea value={form.address} onChange={e => updateField('address', e.target.value)} placeholder="บ้านเลขที่ ซอย ถนน แขวง/ตำบล เขต/อำเภอ" className="bg-secondary border-border font-thai" rows={3} />
                     </div>
-
                     <div className="grid sm:grid-cols-2 gap-4">
                       <div className="space-y-2">
                         <Label className="text-xs font-thai text-muted-foreground">จังหวัด *</Label>
@@ -152,12 +152,10 @@ export default function CheckoutPage() {
                         <Input value={form.postalCode} onChange={e => updateField('postalCode', e.target.value)} placeholder="10XXX" className="bg-secondary border-border font-thai" />
                       </div>
                     </div>
-
                     <div className="space-y-2">
                       <Label className="text-xs font-thai text-muted-foreground">หมายเหตุ (ถ้ามี)</Label>
                       <Input value={form.note} onChange={e => updateField('note', e.target.value)} placeholder="ข้อความถึงทีมงาน" className="bg-secondary border-border font-thai" />
                     </div>
-
                     <Button
                       onClick={() => setStep('payment')}
                       disabled={!isFormValid}
@@ -172,7 +170,6 @@ export default function CheckoutPage() {
                 {step === 'payment' && (
                   <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} className="space-y-4">
                     <h2 className="text-xl font-display font-bold text-foreground">วิธีชำระเงิน</h2>
-
                     <div className="space-y-3">
                       {PAYMENT_METHODS.map(pm => (
                         <button
@@ -189,13 +186,11 @@ export default function CheckoutPage() {
                         </button>
                       ))}
                     </div>
-
                     <div className="flex gap-2 mt-4">
                       <Input value={coupon} onChange={e => setCoupon(e.target.value)} placeholder="รหัสคูปอง" className="bg-secondary border-border font-thai" />
                       <Button onClick={applyCoupon} variant="outline" className="border-gold text-primary font-thai flex-shrink-0">ใช้คูปอง</Button>
                     </div>
                     {discount > 0 && <p className="text-xs text-primary font-thai">✓ ใช้คูปองสำเร็จ ลด ฿{discount.toLocaleString()}</p>}
-
                     <Button
                       onClick={handleSubmit}
                       disabled={processing}
@@ -209,7 +204,6 @@ export default function CheckoutPage() {
                 )}
               </div>
 
-              {/* Order Summary */}
               <div className="lg:col-span-2">
                 <div className="bg-gradient-card border border-border rounded-xl p-6 sticky top-24 shadow-card">
                   <h3 className="font-display font-bold text-foreground mb-4">สรุปคำสั่งซื้อ</h3>

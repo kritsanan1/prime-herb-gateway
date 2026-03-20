@@ -1,10 +1,9 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { Minus, Plus, ShoppingBag, Zap, Package, Eye, Award } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useCart } from '@/contexts/CartContext';
-import { PRODUCTS } from '@/data';
-import productImg from '@/assets/product-hero.jpg';
+import { supabase } from '@/integrations/supabase/client';
 
 const FEATURE_ICONS = [
   { icon: Award, label: 'สมุนไพรคัดสรรคุณภาพสูง' },
@@ -13,13 +12,63 @@ const FEATURE_ICONS = [
   { icon: Zap, label: 'ผลิตในโรงงานมาตรฐาน' },
 ];
 
+const PRODUCT_IMAGES = [
+  { src: '/images/product-white.png', alt: 'Dr.Arty Prime Herb - ผลิตภัณฑ์' },
+  { src: '/images/product-box.png', alt: 'Dr.Arty Prime Herb - แพ็กเกจ' },
+  { src: '/images/product-desk.png', alt: 'Dr.Arty Prime Herb - ไลฟ์สไตล์' },
+  { src: '/images/product-lifestyle.png', alt: 'Dr.Arty Prime Herb - พรีเมียม' },
+];
+
+interface ProductData {
+  id: string;
+  name: string;
+  description: string;
+  short_desc: string;
+  price: number;
+  original_price: number | null;
+  image_url: string;
+  stock: number;
+  features: string[];
+  category: string;
+}
+
 export default function ProductSection() {
   const [quantity, setQuantity] = useState(1);
+  const [selectedImg, setSelectedImg] = useState(0);
+  const [product, setProduct] = useState<ProductData | null>(null);
   const { addItem } = useCart();
-  const product = PRODUCTS[0];
+
+  useEffect(() => {
+    supabase
+      .from('products')
+      .select('*')
+      .limit(1)
+      .single()
+      .then(({ data }) => {
+        if (data) {
+          setProduct({
+            ...data,
+            features: Array.isArray(data.features) ? data.features as string[] : [],
+          });
+        }
+      });
+  }, []);
+
+  if (!product) return null;
 
   const handleAdd = () => {
-    addItem(product, quantity);
+    addItem({
+      id: product.id,
+      name: product.name,
+      description: product.description,
+      shortDesc: product.short_desc,
+      price: product.price,
+      originalPrice: product.original_price ?? undefined,
+      image: product.image_url,
+      stock: product.stock,
+      features: product.features,
+      category: product.category,
+    }, quantity);
     setQuantity(1);
   };
 
@@ -43,21 +92,35 @@ export default function ProductSection() {
             whileInView={{ opacity: 1, x: 0 }}
             viewport={{ once: true }}
             transition={{ duration: 0.7 }}
-            className="relative group"
+            className="space-y-4"
           >
             <div className="aspect-square rounded-2xl overflow-hidden bg-gradient-card border border-border glow-gold">
               <img
-                src={productImg}
-                alt={product.name}
-                className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700"
+                src={PRODUCT_IMAGES[selectedImg].src}
+                alt={PRODUCT_IMAGES[selectedImg].alt}
+                className="w-full h-full object-cover transition-all duration-500"
                 loading="lazy"
               />
             </div>
-            {product.originalPrice && (
+            {product.original_price && (
               <div className="absolute top-4 left-4 bg-gradient-gold text-primary-foreground px-3 py-1 rounded-full text-xs font-thai font-bold">
-                ลด {Math.round((1 - product.price / product.originalPrice) * 100)}%
+                ลด {Math.round((1 - product.price / product.original_price) * 100)}%
               </div>
             )}
+            {/* Thumbnail gallery */}
+            <div className="flex gap-2">
+              {PRODUCT_IMAGES.map((img, i) => (
+                <button
+                  key={i}
+                  onClick={() => setSelectedImg(i)}
+                  className={`w-16 h-16 rounded-lg overflow-hidden border-2 transition-colors ${
+                    selectedImg === i ? 'border-primary' : 'border-border hover:border-muted-foreground'
+                  }`}
+                >
+                  <img src={img.src} alt={img.alt} className="w-full h-full object-cover" />
+                </button>
+              ))}
+            </div>
           </motion.div>
 
           <motion.div
@@ -75,8 +138,8 @@ export default function ProductSection() {
 
             <div className="flex items-baseline gap-3">
               <span className="text-3xl font-display font-bold text-primary">฿{product.price.toLocaleString()}</span>
-              {product.originalPrice && (
-                <span className="text-lg text-muted-foreground line-through">฿{product.originalPrice.toLocaleString()}</span>
+              {product.original_price && (
+                <span className="text-lg text-muted-foreground line-through">฿{product.original_price.toLocaleString()}</span>
               )}
             </div>
 

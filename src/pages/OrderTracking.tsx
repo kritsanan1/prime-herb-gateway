@@ -3,8 +3,8 @@ import { motion } from 'framer-motion';
 import { Search, Package, CheckCircle2, Truck, CreditCard, Clock, XCircle, RotateCcw } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { useOrders } from '@/contexts/OrderContext';
-import { Order, OrderStatus, ORDER_STATUS_LABELS, PAYMENT_METHOD_LABELS } from '@/types';
+import { useOrders, Order, OrderStatus } from '@/contexts/OrderContext';
+import { ORDER_STATUS_LABELS, PAYMENT_METHOD_LABELS } from '@/types';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 import CartDrawer from '@/components/CartDrawer';
@@ -26,12 +26,15 @@ export default function OrderTrackingPage() {
   const [orderNum, setOrderNum] = useState('');
   const [contact, setContact] = useState('');
   const [result, setResult] = useState<Order | null | undefined>(undefined);
+  const [searching, setSearching] = useState(false);
   const { findOrder } = useOrders();
 
-  const handleSearch = () => {
+  const handleSearch = async () => {
     if (!orderNum || !contact) return;
-    const found = findOrder(orderNum.trim(), contact.trim());
+    setSearching(true);
+    const found = await findOrder(orderNum.trim(), contact.trim());
     setResult(found || null);
+    setSearching(false);
   };
 
   const currentStep = result ? getStepIndex(result.status) : -1;
@@ -58,8 +61,8 @@ export default function OrderTrackingPage() {
                 <label className="text-xs font-thai text-muted-foreground">เบอร์โทรศัพท์ หรือ อีเมล</label>
                 <Input value={contact} onChange={e => setContact(e.target.value)} placeholder="เบอร์โทรหรืออีเมลที่ใช้สั่งซื้อ" className="bg-secondary border-border font-thai" />
               </div>
-              <Button onClick={handleSearch} className="w-full bg-gradient-gold text-primary-foreground font-thai font-semibold hover:opacity-90" size="lg">
-                <Search className="mr-2 w-4 h-4" /> ค้นหา
+              <Button onClick={handleSearch} disabled={searching} className="w-full bg-gradient-gold text-primary-foreground font-thai font-semibold hover:opacity-90" size="lg">
+                <Search className="mr-2 w-4 h-4" /> {searching ? 'กำลังค้นหา...' : 'ค้นหา'}
               </Button>
             </div>
           </div>
@@ -100,11 +103,6 @@ export default function OrderTrackingPage() {
                         <span className={`text-[10px] font-thai text-center ${
                           i <= currentStep ? 'text-primary' : 'text-muted-foreground'
                         }`}>{step.label}</span>
-                        {i < STATUS_STEPS.length - 1 && (
-                          <div className={`hidden sm:block absolute h-0.5 ${
-                            i < currentStep ? 'bg-primary' : 'bg-border'
-                          }`} style={{ width: '100%' }} />
-                        )}
                       </div>
                     ))}
                   </div>
