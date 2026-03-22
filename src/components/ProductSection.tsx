@@ -4,6 +4,7 @@ import { Minus, Plus, ShoppingBag, Zap, Package, Eye, Award } from 'lucide-react
 import { Button } from '@/components/ui/button';
 import { useCart } from '@/contexts/CartContext';
 import { supabase } from '@/integrations/supabase/client';
+import ProductGallery from '@/components/ProductGallery';
 
 const FEATURE_ICONS = [
   { icon: Award, label: 'สมุนไพรคัดสรรคุณภาพสูง' },
