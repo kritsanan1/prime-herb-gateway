@@ -412,6 +412,8 @@ export default function AdminPage() {
             </div>
           )}
 
+          {tab === 'coupons' && <CouponManager />}
+
           {tab === 'customers' && (
             <div className="space-y-6">
               <h2 className="text-2xl font-display font-bold text-foreground">รายชื่อลูกค้า</h2>
