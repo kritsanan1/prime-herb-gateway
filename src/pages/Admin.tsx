@@ -107,7 +107,7 @@ function AdminLogin() {
   );
 }
 
-type Tab = 'overview' | 'orders' | 'products' | 'customers';
+type Tab = 'overview' | 'orders' | 'products' | 'coupons' | 'customers';
 
 export default function AdminPage() {
   const { user, isAdmin, loading: authLoading, signOut } = useAuth();
