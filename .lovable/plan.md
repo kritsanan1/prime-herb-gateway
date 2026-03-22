@@ -1,86 +1,54 @@
 
 
-## Plan: อัปเกรดระบบ Dr.Arty Prime Herb
-
-คำขอของคุณมี 4 ส่วนหลัก ขอนำเสนอแผนทั้งหมดดังนี้:
+## แผนงาน: เพิ่มหน้า Privacy/Terms + ตั้งค่า Admin + ทดสอบ Flow
 
 ---
 
-### ส่วนที่ 1: เปิดใช้ Lovable Cloud + สร้างฐานข้อมูลจริง
+### 1. สร้างหน้านโยบายความเป็นส่วนตัวและเงื่อนไขการสั่งซื้อ
 
-เปิดใช้ Lovable Cloud เพื่อสร้างระบบ Supabase backend ให้กับโปรเจกต์
+สร้าง 2 หน้าใหม่ในธีม dark luxury เดียวกับเว็บไซต์:
 
-**Database Schema:**
-- **products** - id, name, description, short_desc, price, original_price, image_url, stock, features (jsonb), category
-- **orders** - id, order_number, items (jsonb), customer_name, customer_phone, customer_email, customer_address, province, postal_code, note, coupon_code, subtotal, shipping, discount, total, status, payment_method, payment_status, tracking_number, created_at, updated_at
-- **profiles** - id (FK auth.users), display_name, avatar_url, created_at
-- **user_roles** - id, user_id (FK auth.users), role (enum: admin, user), unique(user_id, role)
+- **`src/pages/Privacy.tsx`** — นโยบายความเป็นส่วนตัว ครอบคลุมการเก็บข้อมูล, การใช้ข้อมูล, การจัดส่ง, สิทธิ์ของลูกค้า, ช่องทางติดต่อ
+- **`src/pages/Terms.tsx`** — เงื่อนไขการสั่งซื้อ ครอบคลุมขั้นตอนการสั่งซื้อ, การชำระเงิน, การจัดส่ง, นโยบายคืน/เปลี่ยนสินค้า, ข้อจำกัดความรับผิดชอบ
 
-**RLS Policies:**
-- products: ทุกคนอ่านได้, admin เท่านั้นที่แก้ไขได้
-- orders: admin อ่านและแก้ไขได้ทั้งหมด, ลูกค้าค้นหาผ่าน order_number + contact
-- profiles/user_roles: ใช้ `has_role()` security definer function ป้องกัน infinite recursion
+ทั้งสองหน้าจะมี Header + Footer เหมือนหน้าอื่น และเนื้อหาเป็นภาษาไทยทั้งหมด
 
-**Code Changes:**
-- สร้าง `src/integrations/supabase/` client config
-- แก้ไข `OrderContext` ให้ insert/query จาก Supabase แทน localStorage
-- แก้ไข `ProductSection` ให้ดึงข้อมูลจาก products table
-- Seed ข้อมูลสินค้าเริ่มต้นผ่าน migration
+**อัปเดตเพิ่มเติม:**
+- เพิ่ม Routes ใน `App.tsx` สำหรับ `/privacy` และ `/terms`
+- ลิงก์ใน Footer ชี้ไปถูกหน้าแล้ว (ตรวจสอบแล้วว่าใช้ `<Link to="/privacy">` และ `<Link to="/terms">` อยู่)
 
 ---
 
-### ส่วนที่ 2: ระบบ Authentication จริงสำหรับ Admin
+### 2. ตั้งค่า Admin คนแรก
 
-**สิ่งที่จะสร้าง:**
-- หน้า `/admin/login` ที่ใช้ Supabase Auth (email + password)
-- Trigger สร้าง profile อัตโนมัติเมื่อสมัครสมาชิก
-- `has_role()` function สำหรับตรวจสอบสิทธิ์ admin
-- Protected route: ตรวจสอบ session + role ก่อนเข้าหน้า admin
-- ปุ่ม Logout ใน admin dashboard
-- ลบระบบ mock password เดิมออกทั้งหมด
+เนื่องจากระบบต้องยืนยันอีเมลก่อน login ได้ จะดำเนินการดังนี้:
 
-**การตั้งค่า Admin คนแรก:**
-- หลัง deploy จะต้องสมัครบัญชีผ่านหน้า login แล้ว insert role `admin` ผ่าน Supabase Dashboard หรือ seed migration
+1. **เปิด auto-confirm** ชั่วคราวผ่าน `configure_auth` เพื่อให้สมัครแล้วใช้งานได้ทันที (หรือถามผู้ใช้ว่าต้องการอีเมลสำหรับ admin)
+2. **ถามอีเมลและรหัสผ่าน** ที่ต้องการใช้สำหรับบัญชี admin
+3. **สมัครบัญชีผ่านหน้าเว็บ** แล้ว insert role `admin` ลงใน `user_roles` table
+
+ขั้นตอนนี้ต้องให้ผู้ใช้ระบุอีเมลและรหัสผ่าน ก่อนดำเนินการ
 
 ---
 
-### ส่วนที่ 3: ใส่ภาพสินค้าจริง
+### 3. ทดสอบ Flow สั่งซื้อ End-to-End
 
-จากภาพ 6 รูปที่ให้มา จะนำไปใช้ดังนี้:
+หลังจากทำส่วนที่ 1-2 เสร็จ จะใช้ browser tools ทดสอบ:
+1. เข้าหน้าแรก > เพิ่มสินค้าลงตะกร้า
+2. ไปหน้า Checkout > กรอกข้อมูลจัดส่ง
+3. เลือกวิธีชำระเงิน > ยืนยัน
+4. ดูหน้า Order Success
+5. ไปหน้า Tracking ค้นหาด้วยเลขออเดอร์
 
-| ภาพ | การใช้งาน |
-|-----|----------|
-| ภาพ dark/smoke background (d8012hm2c) | Hero section background |
-| ภาพ gold swirls + tagline (gyjlp8z05) | Hero section banner overlay |
-| ภาพ white background (gjiy49hsz) | Product section - รูปสินค้าหลัก |
-| ภาพ product + box (rne32mtfi) | Product detail / gallery |
-| ภาพ lifestyle desk (nklvudbri) | Product section secondary image |
-| ภาพ luxury bathroom (vae2ipthm) | About/brand section หรือ gallery |
-
-**วิธีการ:**
-- ดาวน์โหลดภาพจาก postimg.cc URLs ที่ให้มา
-- เก็บเป็น static assets ใน `public/images/` 
-- อัปเดต `HeroSection`, `ProductSection` และ `data/index.ts` ให้ชี้ไปที่ภาพจริง
-- เพิ่ม product image gallery ใน ProductSection
+แล้วรายงานผลว่าทำงานถูกต้องหรือมีจุดที่ต้องแก้ไข
 
 ---
 
-### ส่วนที่ 4: ทดสอบ Flow การสั่งซื้อ
+### สรุปไฟล์ที่จะสร้าง/แก้ไข
 
-หลังจากทำส่วนที่ 1-3 เสร็จ จะทดสอบ flow ครบวงจร:
-1. เพิ่มสินค้าลงตะกร้า
-2. ไปหน้า checkout กรอกข้อมูล
-3. ชำระเงิน (mock)
-4. เห็นหน้า order success
-5. ติดตามออเดอร์ผ่านหน้า tracking
-
----
-
-### ลำดับการทำงาน
-
-เนื่องจากงานมีขอบเขตกว้าง จะแบ่งเป็น 2 รอบ:
-
-**รอบที่ 1 (ครั้งนี้):** ใส่ภาพจริง + เปิด Lovable Cloud + สร้าง database schema + authentication + protected admin route
-
-**รอบที่ 2:** ย้าย orders/cart logic ไปใช้ Supabase จริง + ทดสอบ end-to-end
+| ไฟล์ | การเปลี่ยนแปลง |
+|------|---------------|
+| `src/pages/Privacy.tsx` | สร้างใหม่ |
+| `src/pages/Terms.tsx` | สร้างใหม่ |
+| `src/App.tsx` | เพิ่ม routes `/privacy`, `/terms` |
 
