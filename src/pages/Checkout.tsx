@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
+import { supabase } from '@/integrations/supabase/client';
 import { CreditCard, QrCode, Building2, ArrowLeft, Loader2, CheckCircle2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -39,9 +40,23 @@ export default function CheckoutPage() {
     setForm(prev => ({ ...prev, [field]: value }));
   };
 
-  const applyCoupon = () => {
-    if (coupon.toUpperCase() === 'DRARTY10') {
-      setDiscount(Math.round(subtotal * 0.1));
+  const applyCoupon = async () => {
+    if (!coupon) return;
+    const { data } = await supabase
+      .from('coupons')
+      .select('*')
+      .ilike('code', coupon)
+      .eq('is_active', true)
+      .maybeSingle();
+
+    if (data) {
+      const c = data as any;
+      if (c.max_uses && c.used_count >= c.max_uses) return;
+      if (subtotal < c.min_order) return;
+      const discountAmt = c.discount_type === 'percentage'
+        ? Math.round(subtotal * c.discount_value / 100)
+        : c.discount_value;
+      setDiscount(discountAmt);
       setForm(prev => ({ ...prev, couponCode: coupon }));
     }
   };
