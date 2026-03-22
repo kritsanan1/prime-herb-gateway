@@ -14,10 +14,10 @@ const FEATURE_ICONS = [
 ];
 
 const PRODUCT_IMAGES = [
-  { src: '/images/product-white.png', alt: 'Dr.Arty Prime Herb - ผลิตภัณฑ์' },
-  { src: '/images/product-box.png', alt: 'Dr.Arty Prime Herb - แพ็กเกจ' },
-  { src: '/images/product-desk.png', alt: 'Dr.Arty Prime Herb - ไลฟ์สไตล์' },
-  { src: '/images/product-lifestyle.png', alt: 'Dr.Arty Prime Herb - พรีเมียม' },
+  { src: '/images/hero-bg.png', alt: 'Dr.Arty Prime Herb - สูตรพรีเมี่ยมจากธรรมชาติ' },
+  { src: '/images/product-gallery5.png', alt: 'Dr.Arty Prime Herb - สงกรานต์มั่นใจใหม่' },
+  { src: '/images/product-gallery11.png', alt: 'Dr.Arty Prime Herb - Limited Edition' },
+  { src: '/images/product-launch.png', alt: 'Dr.Arty Prime Herb - เปิดตัวแล้ว' },
 ];
 
 interface ProductData {

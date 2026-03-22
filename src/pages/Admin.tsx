@@ -274,7 +274,33 @@ export default function AdminPage() {
 
           {tab === 'orders' && !selectedOrder && (
             <div className="space-y-6">
-              <h2 className="text-2xl font-display font-bold text-foreground">คำสั่งซื้อทั้งหมด ({orders.length})</h2>
+              <div className="flex items-center justify-between">
+                <h2 className="text-2xl font-display font-bold text-foreground">คำสั่งซื้อทั้งหมด ({orders.length})</h2>
+                {orders.length > 0 && (
+                  <Button size="sm" variant="outline" className="text-xs font-thai border-border text-muted-foreground" onClick={() => {
+                    const headers = ['เลขออเดอร์','ชื่อลูกค้า','โทร','อีเมล','ที่อยู่','จังหวัด','รหัสไปรษณีย์','สถานะ','สถานะชำระเงิน','วิธีชำระ','ค่าสินค้า','ค่าจัดส่ง','ส่วนลด','ยอดรวม','คูปอง','หมายเหตุ','เลขพัสดุ','วันที่สั่ง'];
+                    const rows = orders.map(o => [
+                      o.orderNumber, o.customer.name, o.customer.phone, o.customer.email,
+                      `"${o.customer.address}"`, o.customer.province, o.customer.postalCode,
+                      o.status, o.paymentStatus, o.paymentMethod,
+                      o.subtotal, o.shipping, o.discount, o.total,
+                      o.customer.couponCode || '', `"${o.customer.note || ''}"`,
+                      o.trackingNumber || '', new Date(o.createdAt).toLocaleString('th-TH'),
+                    ].join(','));
+                    const bom = '\uFEFF';
+                    const csv = bom + [headers.join(','), ...rows].join('\n');
+                    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+                    const url = URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.href = url;
+                    a.download = `orders_${new Date().toISOString().slice(0,10)}.csv`;
+                    a.click();
+                    URL.revokeObjectURL(url);
+                  }}>
+                    <Download className="w-3 h-3 mr-1" /> Export CSV
+                  </Button>
+                )}
+              </div>
               {orders.length === 0 ? (
                 <p className="text-muted-foreground font-thai text-sm">ยังไม่มีออเดอร์</p>
               ) : (
