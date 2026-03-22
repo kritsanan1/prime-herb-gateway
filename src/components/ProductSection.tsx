@@ -35,7 +35,6 @@ interface ProductData {
 
 export default function ProductSection() {
   const [quantity, setQuantity] = useState(1);
-  const [selectedImg, setSelectedImg] = useState(0);
   const [product, setProduct] = useState<ProductData | null>(null);
   const { addItem } = useCart();
 
