@@ -13,20 +13,17 @@ import { CustomerInfo, PaymentMethod } from '@/types';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 import CartDrawer from '@/components/CartDrawer';
-
-const PAYMENT_METHODS: { id: PaymentMethod; label: string; icon: typeof CreditCard; desc: string }[] = [
-  { id: 'promptpay', label: 'PromptPay / QR Payment', icon: QrCode, desc: 'สแกน QR เพื่อชำระเงิน' },
-  { id: 'credit_card', label: 'บัตรเครดิต / เดบิต', icon: CreditCard, desc: 'Visa, Mastercard, JCB' },
-  { id: 'bank_transfer', label: 'โอนผ่านธนาคาร', icon: Building2, desc: 'โอนเงินผ่าน Mobile Banking' },
-];
+import CheckoutShippingForm from '@/components/checkout/CheckoutShippingForm';
+import CheckoutPaymentForm from '@/components/checkout/CheckoutPaymentForm';
+import CheckoutSummary from '@/components/checkout/CheckoutSummary';
 
 export default function CheckoutPage() {
   const navigate = useNavigate();
   const { items, subtotal, clearCart } = useCart();
-  const { createOrder, simulatePayment } = useOrders();
+  const { createOrder, createStripeCheckout } = useOrders();
 
   const [step, setStep] = useState<'info' | 'payment' | 'processing'>('info');
-  const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>('promptpay');
+  const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>('credit_card');
   const [coupon, setCoupon] = useState('');
   const [discount, setDiscount] = useState(0);
   const [processing, setProcessing] = useState(false);
@@ -58,14 +55,18 @@ export default function CheckoutPage() {
 
     try {
       const order = await createOrder(items, form, paymentMethod, subtotal, shipping, discount);
-      const success = await simulatePayment(order.id);
-      clearCart();
-
-      if (success) {
-        navigate(`/order-success/${order.orderNumber}`);
-      } else {
-        navigate(`/order-success/${order.orderNumber}?status=failed`);
+      
+      // Use Stripe Checkout for credit card and PromptPay
+      if (paymentMethod === 'credit_card' || paymentMethod === 'promptpay') {
+        const checkoutUrl = await createStripeCheckout(order);
+        clearCart();
+        window.location.href = checkoutUrl;
+        return;
       }
+
+      // For bank transfer, go to success page with pending status
+      clearCart();
+      navigate(`/order-success/${order.orderNumber}`);
     } catch (err) {
       console.error('Order creation failed:', err);
       setStep('payment');
@@ -106,7 +107,7 @@ export default function CheckoutPage() {
             <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="flex flex-col items-center justify-center py-20">
               <Loader2 className="w-12 h-12 text-primary animate-spin mb-6" />
               <h2 className="text-2xl font-display font-bold text-foreground mb-2">กำลังดำเนินการชำระเงิน</h2>
-              <p className="text-muted-foreground font-thai">กรุณารอสักครู่...</p>
+              <p className="text-muted-foreground font-thai">กำลังเปลี่ยนเส้นทางไปหน้าชำระเงิน...</p>
             </motion.div>
           ) : (
             <div className="grid lg:grid-cols-5 gap-8">
@@ -122,125 +123,37 @@ export default function CheckoutPage() {
                 </div>
 
                 {step === 'info' && (
-                  <motion.div initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} className="space-y-4">
-                    <h2 className="text-xl font-display font-bold text-foreground">ข้อมูลการจัดส่ง</h2>
-                    <div className="grid sm:grid-cols-2 gap-4">
-                      <div className="space-y-2">
-                        <Label className="text-xs font-thai text-muted-foreground">ชื่อ-นามสกุล *</Label>
-                        <Input value={form.name} onChange={e => updateField('name', e.target.value)} placeholder="ชื่อ นามสกุล" className="bg-secondary border-border font-thai" />
-                      </div>
-                      <div className="space-y-2">
-                        <Label className="text-xs font-thai text-muted-foreground">เบอร์โทรศัพท์ *</Label>
-                        <Input value={form.phone} onChange={e => updateField('phone', e.target.value)} placeholder="08X-XXX-XXXX" className="bg-secondary border-border font-thai" />
-                      </div>
-                    </div>
-                    <div className="space-y-2">
-                      <Label className="text-xs font-thai text-muted-foreground">อีเมล *</Label>
-                      <Input value={form.email} onChange={e => updateField('email', e.target.value)} type="email" placeholder="email@example.com" className="bg-secondary border-border font-thai" />
-                    </div>
-                    <div className="space-y-2">
-                      <Label className="text-xs font-thai text-muted-foreground">ที่อยู่จัดส่ง *</Label>
-                      <Textarea value={form.address} onChange={e => updateField('address', e.target.value)} placeholder="บ้านเลขที่ ซอย ถนน แขวง/ตำบล เขต/อำเภอ" className="bg-secondary border-border font-thai" rows={3} />
-                    </div>
-                    <div className="grid sm:grid-cols-2 gap-4">
-                      <div className="space-y-2">
-                        <Label className="text-xs font-thai text-muted-foreground">จังหวัด *</Label>
-                        <Input value={form.province} onChange={e => updateField('province', e.target.value)} placeholder="กรุงเทพมหานคร" className="bg-secondary border-border font-thai" />
-                      </div>
-                      <div className="space-y-2">
-                        <Label className="text-xs font-thai text-muted-foreground">รหัสไปรษณีย์ *</Label>
-                        <Input value={form.postalCode} onChange={e => updateField('postalCode', e.target.value)} placeholder="10XXX" className="bg-secondary border-border font-thai" />
-                      </div>
-                    </div>
-                    <div className="space-y-2">
-                      <Label className="text-xs font-thai text-muted-foreground">หมายเหตุ (ถ้ามี)</Label>
-                      <Input value={form.note} onChange={e => updateField('note', e.target.value)} placeholder="ข้อความถึงทีมงาน" className="bg-secondary border-border font-thai" />
-                    </div>
-                    <Button
-                      onClick={() => setStep('payment')}
-                      disabled={!isFormValid}
-                      className="w-full bg-gradient-gold text-primary-foreground font-thai font-semibold hover:opacity-90 mt-4"
-                      size="lg"
-                    >
-                      ถัดไป: เลือกวิธีชำระเงิน
-                    </Button>
-                  </motion.div>
+                  <CheckoutShippingForm
+                    form={form}
+                    updateField={updateField}
+                    isFormValid={!!isFormValid}
+                    onNext={() => setStep('payment')}
+                  />
                 )}
 
                 {step === 'payment' && (
-                  <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} className="space-y-4">
-                    <h2 className="text-xl font-display font-bold text-foreground">วิธีชำระเงิน</h2>
-                    <div className="space-y-3">
-                      {PAYMENT_METHODS.map(pm => (
-                        <button
-                          key={pm.id}
-                          onClick={() => setPaymentMethod(pm.id)}
-                          className={`w-full flex items-center gap-4 p-4 rounded-xl border transition-colors ${paymentMethod === pm.id ? 'border-primary bg-primary/5' : 'border-border bg-secondary/50 hover:border-muted-foreground/30'}`}
-                        >
-                          <pm.icon className={`w-6 h-6 ${paymentMethod === pm.id ? 'text-primary' : 'text-muted-foreground'}`} />
-                          <div className="text-left">
-                            <p className="text-sm font-thai font-medium text-foreground">{pm.label}</p>
-                            <p className="text-xs text-muted-foreground font-thai">{pm.desc}</p>
-                          </div>
-                          {paymentMethod === pm.id && <CheckCircle2 className="w-5 h-5 text-primary ml-auto" />}
-                        </button>
-                      ))}
-                    </div>
-                    <div className="flex gap-2 mt-4">
-                      <Input value={coupon} onChange={e => setCoupon(e.target.value)} placeholder="รหัสคูปอง" className="bg-secondary border-border font-thai" />
-                      <Button onClick={applyCoupon} variant="outline" className="border-gold text-primary font-thai flex-shrink-0">ใช้คูปอง</Button>
-                    </div>
-                    {discount > 0 && <p className="text-xs text-primary font-thai">✓ ใช้คูปองสำเร็จ ลด ฿{discount.toLocaleString()}</p>}
-                    <Button
-                      onClick={handleSubmit}
-                      disabled={processing}
-                      className="w-full bg-gradient-gold text-primary-foreground font-thai font-semibold hover:opacity-90 mt-4 shadow-gold"
-                      size="lg"
-                    >
-                      {processing ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : null}
-                      ยืนยันและชำระเงิน ฿{total.toLocaleString()}
-                    </Button>
-                  </motion.div>
+                  <CheckoutPaymentForm
+                    paymentMethod={paymentMethod}
+                    setPaymentMethod={setPaymentMethod}
+                    coupon={coupon}
+                    setCoupon={setCoupon}
+                    discount={discount}
+                    applyCoupon={applyCoupon}
+                    processing={processing}
+                    total={total}
+                    onSubmit={handleSubmit}
+                  />
                 )}
               </div>
 
               <div className="lg:col-span-2">
-                <div className="bg-gradient-card border border-border rounded-xl p-6 sticky top-24 shadow-card">
-                  <h3 className="font-display font-bold text-foreground mb-4">สรุปคำสั่งซื้อ</h3>
-                  <div className="space-y-3 mb-4">
-                    {items.map(item => (
-                      <div key={item.product.id} className="flex justify-between text-sm font-thai">
-                        <span className="text-muted-foreground">{item.product.name} x{item.quantity}</span>
-                        <span className="text-foreground">฿{(item.product.price * item.quantity).toLocaleString()}</span>
-                      </div>
-                    ))}
-                  </div>
-                  <div className="border-t border-border pt-3 space-y-2">
-                    <div className="flex justify-between text-sm font-thai">
-                      <span className="text-muted-foreground">ค่าสินค้า</span>
-                      <span>฿{subtotal.toLocaleString()}</span>
-                    </div>
-                    <div className="flex justify-between text-sm font-thai">
-                      <span className="text-muted-foreground">ค่าจัดส่ง</span>
-                      <span>{shipping === 0 ? 'ฟรี' : `฿${shipping}`}</span>
-                    </div>
-                    {discount > 0 && (
-                      <div className="flex justify-between text-sm font-thai text-primary">
-                        <span>ส่วนลด</span>
-                        <span>-฿{discount.toLocaleString()}</span>
-                      </div>
-                    )}
-                    <div className="flex justify-between text-base font-thai font-bold pt-2 border-t border-border">
-                      <span className="text-foreground">ยอดรวมทั้งหมด</span>
-                      <span className="text-primary">฿{total.toLocaleString()}</span>
-                    </div>
-                  </div>
-                  {subtotal < FREE_SHIPPING_THRESHOLD && (
-                    <p className="text-[10px] text-muted-foreground font-thai mt-3">
-                      สั่งซื้อ ฿{FREE_SHIPPING_THRESHOLD.toLocaleString()} ขึ้นไป จัดส่งฟรี
-                    </p>
-                  )}
-                </div>
+                <CheckoutSummary
+                  items={items}
+                  subtotal={subtotal}
+                  shipping={shipping}
+                  discount={discount}
+                  total={total}
+                />
               </div>
             </div>
           )}

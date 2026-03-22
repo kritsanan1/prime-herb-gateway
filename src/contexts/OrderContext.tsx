@@ -29,7 +29,7 @@ interface OrderContextType {
   findOrder: (orderNumber: string, contact: string) => Promise<Order | undefined>;
   updateOrderStatus: (orderId: string, status: OrderStatus) => Promise<void>;
   updatePaymentStatus: (orderId: string, status: 'pending' | 'paid' | 'failed' | 'refunded') => void;
-  simulatePayment: (orderId: string) => Promise<boolean>;
+  createStripeCheckout: (order: Order) => Promise<string>;
   refreshOrders: () => Promise<void>;
 }
 
@@ -125,6 +125,19 @@ export const OrderProvider: React.FC<{ children: React.ReactNode }> = ({ childre
 
     const order = dbRowToOrder(data);
     setOrders(prev => [order, ...prev]);
+
+    // Send new order notification email (fire and forget)
+    try {
+      const projectId = import.meta.env.VITE_SUPABASE_PROJECT_ID;
+      fetch(`https://${projectId}.supabase.co/functions/v1/send-order-email`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ type: 'new_order', order: data }),
+      });
+    } catch (e) {
+      console.log('Email notification skipped:', e);
+    }
+
     return order;
   }, []);
 
@@ -147,7 +160,25 @@ export const OrderProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     setOrders(prev => prev.map(o =>
       o.id === orderId ? { ...o, status, updatedAt: new Date().toISOString() } : o
     ));
-  }, []);
+
+    // Send status update email
+    try {
+      const order = orders.find(o => o.id === orderId);
+      if (order) {
+        const projectId = import.meta.env.VITE_SUPABASE_PROJECT_ID;
+        fetch(`https://${projectId}.supabase.co/functions/v1/send-order-email`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            type: 'status_update',
+            order: { ...order, status, order_number: order.orderNumber, customer_name: order.customer.name, customer_phone: order.customer.phone, customer_email: order.customer.email, customer_address: order.customer.address },
+          }),
+        });
+      }
+    } catch (e) {
+      console.log('Status email skipped:', e);
+    }
+  }, [orders]);
 
   const updatePaymentStatus = useCallback((orderId: string, status: 'pending' | 'paid' | 'failed' | 'refunded') => {
     const newStatus: OrderStatus = status === 'paid' ? 'paid' : status === 'failed' ? 'failed' : status === 'refunded' ? 'refunded' : 'pending';
@@ -158,19 +189,32 @@ export const OrderProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     }));
   }, []);
 
-  const simulatePayment = useCallback(async (orderId: string): Promise<boolean> => {
-    await new Promise(resolve => setTimeout(resolve, 2500));
-    const success = Math.random() > 0.1;
-    if (success) {
-      updatePaymentStatus(orderId, 'paid');
-    } else {
-      updatePaymentStatus(orderId, 'failed');
-    }
-    return success;
-  }, [updatePaymentStatus]);
+  const createStripeCheckout = useCallback(async (order: Order): Promise<string> => {
+    const totalQuantity = order.items.reduce((sum, item) => sum + item.quantity, 0);
+    const projectId = import.meta.env.VITE_SUPABASE_PROJECT_ID;
+    
+    const response = await fetch(
+      `https://${projectId}.supabase.co/functions/v1/create-checkout`,
+      {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          orderId: order.id,
+          orderNumber: order.orderNumber,
+          quantity: totalQuantity,
+          customerEmail: order.customer.email,
+          origin: window.location.origin,
+        }),
+      }
+    );
+
+    const data = await response.json();
+    if (data.error) throw new Error(data.error);
+    return data.url;
+  }, []);
 
   return (
-    <OrderContext.Provider value={{ orders, loading, createOrder, getOrder, findOrder, updateOrderStatus, updatePaymentStatus, simulatePayment, refreshOrders }}>
+    <OrderContext.Provider value={{ orders, loading, createOrder, getOrder, findOrder, updateOrderStatus, updatePaymentStatus, createStripeCheckout, refreshOrders }}>
       {children}
     </OrderContext.Provider>
   );
