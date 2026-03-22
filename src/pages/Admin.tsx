@@ -157,6 +157,7 @@ export default function AdminPage() {
 
   const TABS: { id: Tab; label: string; icon: typeof Package }[] = [
     { id: 'overview', label: 'ภาพรวม', icon: BarChart3 },
+    { id: 'analytics', label: 'Analytics', icon: TrendingUp },
     { id: 'orders', label: 'คำสั่งซื้อ', icon: ShoppingBag },
     { id: 'products', label: 'สินค้า', icon: Package },
     { id: 'coupons', label: 'คูปอง', icon: Tag },
