@@ -158,6 +158,7 @@ export default function AdminPage() {
     { id: 'overview', label: 'ภาพรวม', icon: BarChart3 },
     { id: 'orders', label: 'คำสั่งซื้อ', icon: ShoppingBag },
     { id: 'products', label: 'สินค้า', icon: Package },
+    { id: 'coupons', label: 'คูปอง', icon: Tag },
     { id: 'customers', label: 'ลูกค้า', icon: Users },
   ];
 
