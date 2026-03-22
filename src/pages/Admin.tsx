@@ -270,6 +270,8 @@ export default function AdminPage() {
             </div>
           )}
 
+          {tab === 'analytics' && <AnalyticsDashboard orders={orders} />}
+
           {tab === 'orders' && !selectedOrder && (
             <div className="space-y-6">
               <h2 className="text-2xl font-display font-bold text-foreground">คำสั่งซื้อทั้งหมด ({orders.length})</h2>
