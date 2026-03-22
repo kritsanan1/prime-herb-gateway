@@ -93,35 +93,14 @@ export default function ProductSection() {
             whileInView={{ opacity: 1, x: 0 }}
             viewport={{ once: true }}
             transition={{ duration: 0.7 }}
-            className="space-y-4"
+            className="relative"
           >
-            <div className="aspect-square rounded-2xl overflow-hidden bg-gradient-card border border-border glow-gold">
-              <img
-                src={PRODUCT_IMAGES[selectedImg].src}
-                alt={PRODUCT_IMAGES[selectedImg].alt}
-                className="w-full h-full object-cover transition-all duration-500"
-                loading="lazy"
-              />
-            </div>
             {product.original_price && (
-              <div className="absolute top-4 left-4 bg-gradient-gold text-primary-foreground px-3 py-1 rounded-full text-xs font-thai font-bold">
+              <div className="absolute top-4 left-4 z-10 bg-gradient-gold text-primary-foreground px-3 py-1 rounded-full text-xs font-thai font-bold">
                 ลด {Math.round((1 - product.price / product.original_price) * 100)}%
               </div>
             )}
-            {/* Thumbnail gallery */}
-            <div className="flex gap-2">
-              {PRODUCT_IMAGES.map((img, i) => (
-                <button
-                  key={i}
-                  onClick={() => setSelectedImg(i)}
-                  className={`w-16 h-16 rounded-lg overflow-hidden border-2 transition-colors ${
-                    selectedImg === i ? 'border-primary' : 'border-border hover:border-muted-foreground'
-                  }`}
-                >
-                  <img src={img.src} alt={img.alt} className="w-full h-full object-cover" />
-                </button>
-              ))}
-            </div>
+            <ProductGallery images={PRODUCT_IMAGES} />
           </motion.div>
 
           <motion.div
