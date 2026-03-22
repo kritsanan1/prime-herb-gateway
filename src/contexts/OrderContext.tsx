@@ -160,22 +160,21 @@ export const OrderProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       o.id === orderId ? { ...o, status, updatedAt: new Date().toISOString() } : o
     ));
 
-    // Send status update email
+    // Send notifications
     try {
       const order = orders.find(o => o.id === orderId);
       if (order) {
         const projectId = import.meta.env.VITE_SUPABASE_PROJECT_ID;
-        fetch(`https://${projectId}.supabase.co/functions/v1/send-order-email`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            type: 'status_update',
-            order: { ...order, status, order_number: order.orderNumber, customer_name: order.customer.name, customer_phone: order.customer.phone, customer_email: order.customer.email, customer_address: order.customer.address },
-          }),
+        const payload = JSON.stringify({
+          type: 'status_update',
+          order: { ...order, status, order_number: order.orderNumber, customer_name: order.customer.name, customer_phone: order.customer.phone, customer_email: order.customer.email, customer_address: order.customer.address },
         });
+        const headers = { 'Content-Type': 'application/json' };
+        fetch(`https://${projectId}.supabase.co/functions/v1/send-order-email`, { method: 'POST', headers, body: payload });
+        fetch(`https://${projectId}.supabase.co/functions/v1/line-notify`, { method: 'POST', headers, body: payload });
       }
     } catch (e) {
-      console.log('Status email skipped:', e);
+      console.log('Notification skipped:', e);
     }
   }, [orders]);
 
