@@ -7,8 +7,9 @@ import { ORDER_STATUS_LABELS, PAYMENT_METHOD_LABELS } from '@/types';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Package, Users, DollarSign, Eye, ChevronLeft, BarChart3, Lock, ShoppingBag, Settings, LogOut, Loader2, Tag } from 'lucide-react';
+import { Package, Users, DollarSign, Eye, ChevronLeft, BarChart3, Lock, ShoppingBag, Settings, LogOut, Loader2, Tag, TrendingUp } from 'lucide-react';
 import CouponManager from '@/components/admin/CouponManager';
+import AnalyticsDashboard from '@/components/admin/AnalyticsDashboard';
 
 function AdminLogin() {
   const { signIn, signUp } = useAuth();
@@ -107,7 +108,7 @@ function AdminLogin() {
   );
 }
 
-type Tab = 'overview' | 'orders' | 'products' | 'coupons' | 'customers';
+type Tab = 'overview' | 'analytics' | 'orders' | 'products' | 'coupons' | 'customers';
 
 export default function AdminPage() {
   const { user, isAdmin, loading: authLoading, signOut } = useAuth();
@@ -156,6 +157,7 @@ export default function AdminPage() {
 
   const TABS: { id: Tab; label: string; icon: typeof Package }[] = [
     { id: 'overview', label: 'ภาพรวม', icon: BarChart3 },
+    { id: 'analytics', label: 'Analytics', icon: TrendingUp },
     { id: 'orders', label: 'คำสั่งซื้อ', icon: ShoppingBag },
     { id: 'products', label: 'สินค้า', icon: Package },
     { id: 'coupons', label: 'คูปอง', icon: Tag },
@@ -267,6 +269,8 @@ export default function AdminPage() {
               </div>
             </div>
           )}
+
+          {tab === 'analytics' && <AnalyticsDashboard orders={orders} />}
 
           {tab === 'orders' && !selectedOrder && (
             <div className="space-y-6">
