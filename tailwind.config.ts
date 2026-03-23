@@ -51,6 +51,7 @@ export default {
           DEFAULT: "hsl(var(--gold))",
           light: "hsl(var(--gold-light))",
           dark: "hsl(var(--gold-dark))",
+          glow: "hsl(var(--gold-glow))",
         },
         charcoal: {
           DEFAULT: "hsl(var(--charcoal))",
@@ -69,7 +70,7 @@ export default {
       },
       fontFamily: {
         thai: ["'Noto Sans Thai'", "sans-serif"],
-        display: ["'Playfair Display'", "'Noto Sans Thai'", "serif"],
+        display: ["'Cormorant Garamond'", "'Noto Sans Thai'", "serif"],
       },
       borderRadius: {
         lg: "var(--radius)",
@@ -94,8 +95,24 @@ export default {
           "100%": { backgroundPosition: "200% 0" },
         },
         "pulse-gold": {
-          "0%, 100%": { boxShadow: "0 0 15px hsl(40 65% 58% / 0.2)" },
-          "50%": { boxShadow: "0 0 30px hsl(40 65% 58% / 0.4)" },
+          "0%, 100%": { boxShadow: "0 0 15px hsl(40 65% 58% / 0.15)" },
+          "50%": { boxShadow: "0 0 35px hsl(40 65% 58% / 0.35)" },
+        },
+        "float": {
+          "0%, 100%": { transform: "translateY(0)" },
+          "50%": { transform: "translateY(-8px)" },
+        },
+        "scale-in": {
+          "0%": { transform: "scale(0.95)", opacity: "0" },
+          "100%": { transform: "scale(1)", opacity: "1" },
+        },
+        "slide-up": {
+          "0%": { transform: "translateY(100%)", opacity: "0" },
+          "100%": { transform: "translateY(0)", opacity: "1" },
+        },
+        "gold-shimmer": {
+          "0%": { backgroundPosition: "-100% 0" },
+          "100%": { backgroundPosition: "200% 0" },
         },
       },
       animation: {
@@ -103,7 +120,11 @@ export default {
         "accordion-up": "accordion-up 0.2s ease-out",
         "fade-in": "fade-in 0.6s ease-out forwards",
         shimmer: "shimmer 2s infinite linear",
-        "pulse-gold": "pulse-gold 2s infinite ease-in-out",
+        "pulse-gold": "pulse-gold 3s infinite ease-in-out",
+        "float": "float 6s ease-in-out infinite",
+        "scale-in": "scale-in 0.4s ease-out forwards",
+        "slide-up": "slide-up 0.5s ease-out forwards",
+        "gold-shimmer": "gold-shimmer 3s ease-in-out infinite",
       },
     },
   },
