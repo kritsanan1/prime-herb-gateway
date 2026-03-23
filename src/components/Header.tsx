@@ -49,21 +49,32 @@ export default function Header() {
   };
 
   return (
-    <header className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${scrolled ? 'bg-background/95 backdrop-blur-md border-b border-border' : 'bg-transparent'}`}>
+    <header
+      className={`fixed top-0 left-0 right-0 z-50 transition-all duration-500 ${
+        scrolled
+          ? 'glass border-b border-border/50 shadow-card'
+          : 'bg-transparent'
+      }`}
+    >
       <div className="container flex items-center justify-between h-16 md:h-20">
-        <Link to="/" className="flex items-center gap-2">
-          <span className="text-lg md:text-xl font-display font-bold text-gradient-gold">Dr.Arty</span>
-          <span className="text-xs md:text-sm text-muted-foreground font-thai hidden sm:block">Prime Herb</span>
+        <Link to="/" className="flex items-center gap-3 group">
+          <span className="text-lg md:text-xl font-display font-bold text-gradient-gold tracking-wide group-hover:opacity-80 transition-opacity duration-300">
+            Dr.Arty
+          </span>
+          <span className="text-[10px] md:text-xs text-muted-foreground font-thai hidden sm:block tracking-[0.15em] uppercase">
+            Prime Herb
+          </span>
         </Link>
 
-        <nav className="hidden lg:flex items-center gap-6">
+        <nav className="hidden lg:flex items-center gap-1">
           {NAV_ITEMS.map(item => (
             <button
               key={item.href}
               onClick={() => handleNavClick(item.href)}
-              className="text-sm text-secondary-foreground/80 hover:text-primary transition-colors font-thai"
+              className="relative px-4 py-2 text-sm text-secondary-foreground/70 hover:text-primary transition-colors duration-300 font-thai group"
             >
               {item.label}
+              <span className="absolute bottom-0 left-1/2 -translate-x-1/2 w-0 h-px bg-primary group-hover:w-3/4 transition-all duration-300" />
             </button>
           ))}
         </nav>
@@ -71,7 +82,7 @@ export default function Header() {
         <div className="flex items-center gap-3">
           <button
             onClick={() => setIsOpen(true)}
-            className="relative p-2 text-secondary-foreground/80 hover:text-primary transition-colors"
+            className="relative p-2.5 text-secondary-foreground/70 hover:text-primary transition-all duration-300 rounded-xl hover:bg-primary/5"
             aria-label="ตะกร้าสินค้า"
           >
             <ShoppingBag className="w-5 h-5" />
@@ -79,7 +90,7 @@ export default function Header() {
               <motion.span
                 initial={{ scale: 0 }}
                 animate={{ scale: 1 }}
-                className="absolute -top-1 -right-1 w-5 h-5 rounded-full bg-gradient-gold text-primary-foreground text-xs flex items-center justify-center font-bold"
+                className="absolute -top-0.5 -right-0.5 w-5 h-5 rounded-full bg-gradient-gold text-primary-foreground text-[10px] flex items-center justify-center font-bold shadow-gold"
               >
                 {totalItems}
               </motion.span>
@@ -89,14 +100,14 @@ export default function Header() {
           <Button
             onClick={() => handleNavClick('/#products')}
             size="sm"
-            className="hidden md:inline-flex bg-gradient-gold text-primary-foreground font-thai font-semibold hover:opacity-90 transition-opacity"
+            className="hidden md:inline-flex bg-gradient-gold text-primary-foreground font-thai font-semibold hover:opacity-90 transition-all duration-300 shadow-gold rounded-lg"
           >
             สั่งซื้อเลย
           </Button>
 
           <button
             onClick={() => setMobileOpen(!mobileOpen)}
-            className="lg:hidden p-2 text-secondary-foreground/80"
+            className="lg:hidden p-2 text-secondary-foreground/70 hover:text-primary transition-colors"
             aria-label="เมนู"
           >
             {mobileOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
@@ -110,21 +121,25 @@ export default function Header() {
             initial={{ opacity: 0, height: 0 }}
             animate={{ opacity: 1, height: 'auto' }}
             exit={{ opacity: 0, height: 0 }}
-            className="lg:hidden bg-background/98 backdrop-blur-md border-b border-border overflow-hidden"
+            transition={{ duration: 0.3, ease: [0.22, 1, 0.36, 1] }}
+            className="lg:hidden glass border-b border-border/50 overflow-hidden"
           >
-            <nav className="container py-4 flex flex-col gap-3">
-              {NAV_ITEMS.map(item => (
-                <button
+            <nav className="container py-6 flex flex-col gap-1">
+              {NAV_ITEMS.map((item, i) => (
+                <motion.button
                   key={item.href}
+                  initial={{ opacity: 0, x: -20 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  transition={{ delay: i * 0.05 }}
                   onClick={() => handleNavClick(item.href)}
-                  className="text-left text-sm text-secondary-foreground/80 hover:text-primary transition-colors py-2 font-thai"
+                  className="text-left text-sm text-secondary-foreground/70 hover:text-primary transition-colors py-3 px-4 font-thai rounded-lg hover:bg-primary/5"
                 >
                   {item.label}
-                </button>
+                </motion.button>
               ))}
               <Button
                 onClick={() => handleNavClick('/#products')}
-                className="bg-gradient-gold text-primary-foreground font-thai font-semibold mt-2"
+                className="bg-gradient-gold text-primary-foreground font-thai font-semibold mt-3 shadow-gold"
               >
                 สั่งซื้อเลย
               </Button>
