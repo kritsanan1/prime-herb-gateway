@@ -11,19 +11,25 @@ const CHANNELS = [
 
 export default function ContactSection() {
   return (
-    <section id="contact" className="py-20 md:py-32">
-      <div className="container max-w-4xl">
+    <section id="contact" className="relative py-24 md:py-36 overflow-hidden">
+      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[400px] bg-radial-gold opacity-20 pointer-events-none" />
+
+      <div className="container max-w-4xl relative z-10">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
-          className="text-center mb-16"
+          transition={{ duration: 0.8, ease: [0.22, 1, 0.36, 1] }}
+          className="text-center mb-20"
         >
-          <h2 className="text-3xl md:text-4xl font-display font-bold text-gradient-gold mb-4">ติดต่อเรา</h2>
-          <p className="text-muted-foreground font-thai">พร้อมให้บริการทุกวัน สำหรับคำถามหรือปัญหาเกี่ยวกับคำสั่งซื้อ</p>
+          <p className="text-xs text-primary font-thai tracking-[0.3em] uppercase mb-4">Contact</p>
+          <h2 className="text-3xl md:text-5xl font-display font-bold text-gradient-gold mb-4 gold-divider">
+            ติดต่อเรา
+          </h2>
+          <p className="text-muted-foreground font-thai mt-8">พร้อมให้บริการทุกวัน สำหรับคำถามหรือปัญหาเกี่ยวกับคำสั่งซื้อ</p>
         </motion.div>
 
-        <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-5">
           {CHANNELS.map((ch, i) => (
             <motion.a
               key={i}
@@ -31,12 +37,14 @@ export default function ContactSection() {
               initial={{ opacity: 0, y: 20 }}
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
-              transition={{ delay: i * 0.1 }}
-              className="bg-gradient-card border border-border rounded-xl p-6 text-center hover:border-gold transition-all group shadow-card"
+              transition={{ delay: i * 0.1, duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
+              className="bg-gradient-card border border-border/60 rounded-2xl p-7 text-center hover:border-gold/40 transition-all duration-500 group hover-lift"
             >
-              <ch.icon className="w-8 h-8 text-primary mx-auto mb-3 group-hover:scale-110 transition-transform" />
+              <div className="w-14 h-14 rounded-xl bg-primary/10 group-hover:bg-primary/15 flex items-center justify-center mx-auto mb-4 transition-all duration-500 group-hover:shadow-gold">
+                <ch.icon className="w-6 h-6 text-primary group-hover:scale-110 transition-transform duration-300" />
+              </div>
               <p className="font-thai font-medium text-foreground text-sm mb-1">{ch.label}</p>
-              <p className="text-xs text-muted-foreground font-thai">{ch.desc}</p>
+              <p className="text-xs text-muted-foreground/60 font-thai">{ch.desc}</p>
             </motion.a>
           ))}
         </div>
@@ -45,12 +53,15 @@ export default function ContactSection() {
           initial={{ opacity: 0, y: 20 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
-          className="mt-10 text-center"
+          className="mt-12 text-center"
         >
-          <p className="text-sm text-muted-foreground font-thai mb-4">
+          <p className="text-sm text-muted-foreground/60 font-thai mb-5">
             ชำระเงินไม่สำเร็จ? ต้องการความช่วยเหลือ?
           </p>
-          <Button variant="outline" className="border-gold text-primary font-thai hover:bg-primary/10">
+          <Button
+            variant="outline"
+            className="border-gold/40 text-primary font-thai hover:bg-primary/10 transition-all duration-300 rounded-xl glass"
+          >
             แจ้งปัญหาการชำระเงิน
           </Button>
         </motion.div>
