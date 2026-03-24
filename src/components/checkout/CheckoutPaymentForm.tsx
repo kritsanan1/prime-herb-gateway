@@ -24,33 +24,61 @@ interface Props {
 
 export default function CheckoutPaymentForm({ paymentMethod, setPaymentMethod, coupon, setCoupon, discount, applyCoupon, processing, total, onSubmit }: Props) {
   return (
-    <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} className="space-y-4">
-      <h2 className="text-xl font-display font-bold text-foreground">วิธีชำระเงิน</h2>
+    <motion.div
+      initial={{ opacity: 0, x: 20 }}
+      animate={{ opacity: 1, x: 0 }}
+      className="glass border border-border rounded-2xl p-6 md:p-8 shadow-card space-y-5"
+    >
+      <h2 className="text-xl font-display font-bold text-foreground gold-divider pb-4">วิธีชำระเงิน</h2>
       <div className="space-y-3">
-        {PAYMENT_METHODS.map(pm => (
-          <button
+        {PAYMENT_METHODS.map((pm, i) => (
+          <motion.button
             key={pm.id}
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.05 * i }}
             onClick={() => setPaymentMethod(pm.id)}
-            className={`w-full flex items-center gap-4 p-4 rounded-xl border transition-colors ${paymentMethod === pm.id ? 'border-primary bg-primary/5' : 'border-border bg-secondary/50 hover:border-muted-foreground/30'}`}
+            whileHover={{ scale: 1.01, y: -2 }}
+            whileTap={{ scale: 0.99 }}
+            className={`w-full flex items-center gap-4 p-4 rounded-xl border transition-all duration-300 ${
+              paymentMethod === pm.id
+                ? 'border-primary bg-primary/5 shadow-[0_0_20px_hsl(var(--primary)/0.15)]'
+                : 'border-border bg-secondary/30 hover:border-muted-foreground/30'
+            }`}
           >
-            <pm.icon className={`w-6 h-6 ${paymentMethod === pm.id ? 'text-primary' : 'text-muted-foreground'}`} />
+            <pm.icon className={`w-6 h-6 transition-colors duration-300 ${paymentMethod === pm.id ? 'text-primary' : 'text-muted-foreground'}`} />
             <div className="text-left">
               <p className="text-sm font-thai font-medium text-foreground">{pm.label}</p>
               <p className="text-xs text-muted-foreground font-thai">{pm.desc}</p>
             </div>
-            {paymentMethod === pm.id && <CheckCircle2 className="w-5 h-5 text-primary ml-auto" />}
-          </button>
+            {paymentMethod === pm.id && (
+              <motion.div initial={{ scale: 0 }} animate={{ scale: 1 }} transition={{ type: 'spring', stiffness: 500 }}>
+                <CheckCircle2 className="w-5 h-5 text-primary ml-auto" />
+              </motion.div>
+            )}
+          </motion.button>
         ))}
       </div>
+
       <div className="flex gap-2 mt-4">
-        <Input value={coupon} onChange={e => setCoupon(e.target.value)} placeholder="รหัสคูปอง" className="bg-secondary border-border font-thai" />
-        <Button onClick={applyCoupon} variant="outline" className="border-gold text-primary font-thai flex-shrink-0">ใช้คูปอง</Button>
+        <Input value={coupon} onChange={e => setCoupon(e.target.value)} placeholder="รหัสคูปอง" className="bg-secondary/50 border-border font-thai focus:border-primary/50" />
+        <Button onClick={applyCoupon} variant="outline" className="border-gold text-primary font-thai flex-shrink-0 hover:bg-primary/10">ใช้คูปอง</Button>
       </div>
-      {discount > 0 && <p className="text-xs text-primary font-thai">✓ ใช้คูปองสำเร็จ ลด ฿{discount.toLocaleString()}</p>}
+
+      {discount > 0 && (
+        <motion.p
+          initial={{ opacity: 0, x: -10 }}
+          animate={{ opacity: 1, x: 0 }}
+          className="text-xs text-primary font-thai"
+        >
+          ✓ ใช้คูปองสำเร็จ ลด ฿{discount.toLocaleString()}
+        </motion.p>
+      )}
+
       <Button
         onClick={onSubmit}
         disabled={processing}
-        className="w-full bg-gradient-gold text-primary-foreground font-thai font-semibold hover:opacity-90 mt-4 shadow-gold"
+        className="w-full bg-gradient-gold text-primary-foreground font-thai font-semibold hover:opacity-90 mt-4 shadow-gold-intense rounded-xl"
         size="lg"
       >
         {processing ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : null}
