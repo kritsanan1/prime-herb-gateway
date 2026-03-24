@@ -1,35 +1,53 @@
-import { motion } from 'framer-motion';
+import { useRef } from 'react';
+import { motion, useScroll, useTransform } from 'framer-motion';
 import { Button } from '@/components/ui/button';
 import { ArrowRight, ShieldCheck, Sparkles } from 'lucide-react';
 
 export default function HeroSection() {
+  const sectionRef = useRef<HTMLElement>(null);
+  const { scrollYProgress } = useScroll({
+    target: sectionRef,
+    offset: ['start start', 'end start'],
+  });
+
+  const bgY = useTransform(scrollYProgress, [0, 1], ['0%', '-15%']);
+  const glowY = useTransform(scrollYProgress, [0, 1], ['0%', '-25%']);
+  const glowScale = useTransform(scrollYProgress, [0, 1], [1, 1.3]);
+  const contentY = useTransform(scrollYProgress, [0, 1], ['0%', '-5%']);
+  const bannerY = useTransform(scrollYProgress, [0, 1], ['0%', '10%']);
+  const overlayOpacity = useTransform(scrollYProgress, [0, 0.5], [0.6, 0.9]);
+
   const scrollToProducts = () => {
     document.getElementById('products')?.scrollIntoView({ behavior: 'smooth' });
   };
 
   return (
-    <section className="relative min-h-screen flex items-center justify-center overflow-hidden">
-      {/* Background image with parallax-like depth */}
-      <div
-        className="absolute inset-0 bg-cover bg-center scale-105"
-        style={{ backgroundImage: `url(/images/hero-bg.png)` }}
+    <section ref={sectionRef} className="relative min-h-screen flex items-center justify-center overflow-hidden">
+      {/* Parallax background */}
+      <motion.div
+        className="absolute inset-0 bg-cover bg-center scale-110"
+        style={{ backgroundImage: `url(/images/hero-bg.png)`, y: bgY }}
       />
-      {/* Multi-layer overlay for depth */}
-      <div className="absolute inset-0 bg-gradient-to-b from-background/80 via-background/50 to-background/90" />
+      {/* Multi-layer overlay */}
+      <motion.div className="absolute inset-0 bg-gradient-to-b from-background/80 via-background/50 to-background/90" style={{ opacity: overlayOpacity }} />
       <div className="absolute inset-0 bg-gradient-to-r from-background/40 via-transparent to-background/40" />
 
-      {/* Radial gold ambient light */}
-      <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[800px] h-[600px] bg-radial-gold opacity-60 pointer-events-none" />
+      {/* Parallax radial gold glow */}
+      <motion.div
+        className="absolute top-0 left-1/2 -translate-x-1/2 w-[800px] h-[600px] bg-radial-gold opacity-60 pointer-events-none"
+        style={{ y: glowY, scale: glowScale }}
+      />
 
-      {/* Gold banner overlay */}
-      <div className="absolute inset-0 flex items-center justify-center opacity-10 pointer-events-none">
+      {/* Parallax banner overlay */}
+      <motion.div className="absolute inset-0 flex items-center justify-center opacity-10 pointer-events-none" style={{ y: bannerY }}>
         <img src="/images/hero-banner.png" alt="" className="max-w-3xl w-full object-contain animate-float" />
-      </div>
+      </motion.div>
 
       {/* Noise texture */}
       <div className="absolute inset-0 noise-overlay pointer-events-none" />
 
-      <div className="container relative z-10 py-32 md:py-40">
+      {/* Parallax content */}
+      <motion.div className="container relative z-10 py-32 md:py-40" style={{ y: contentY }}>
         <div className="max-w-2xl mx-auto text-center">
           <motion.div
             initial={{ opacity: 0, y: 30 }}
@@ -110,9 +128,9 @@ export default function HeroSection() {
             ))}
           </motion.div>
         </div>
-      </div>
+      </motion.div>
 
-      {/* Bottom fade to next section */}
+      {/* Bottom fade */}
       <div className="absolute bottom-0 left-0 right-0 h-32 bg-gradient-to-t from-background to-transparent" />
     </section>
   );

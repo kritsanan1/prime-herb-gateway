@@ -1,5 +1,5 @@
-import { useState, useEffect } from 'react';
-import { motion } from 'framer-motion';
+import { useState, useEffect, useRef } from 'react';
+import { motion, useScroll, useTransform } from 'framer-motion';
 import { Minus, Plus, ShoppingBag, Zap, Package, Eye, Award } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useCart } from '@/contexts/CartContext';
@@ -38,6 +38,14 @@ export default function ProductSection() {
   const [product, setProduct] = useState<ProductData | null>(null);
   const { addItem } = useCart();
 
+  const sectionRef = useRef<HTMLElement>(null);
+  const { scrollYProgress } = useScroll({
+    target: sectionRef,
+    offset: ['start end', 'end start'],
+  });
+  const glowY = useTransform(scrollYProgress, [0, 1], ['0%', '-20%']);
+  const glowOpacity = useTransform(scrollYProgress, [0, 0.3, 0.7, 1], [0.2, 0.5, 0.5, 0.2]);
+
   useEffect(() => {
     supabase
       .from('products')
@@ -73,9 +81,12 @@ export default function ProductSection() {
   };
 
   return (
-    <section id="products" className="relative py-24 md:py-36 bg-gradient-dark overflow-hidden">
-      {/* Ambient glow */}
-      <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[600px] h-[400px] bg-radial-gold opacity-40 pointer-events-none" />
+    <section ref={sectionRef} id="products" className="relative py-24 md:py-36 bg-gradient-dark overflow-hidden">
+      {/* Parallax ambient glow */}
+      <motion.div
+        className="absolute top-0 left-1/2 -translate-x-1/2 w-[600px] h-[400px] bg-radial-gold pointer-events-none"
+        style={{ y: glowY, opacity: glowOpacity }}
+      />
       <div className="absolute inset-0 noise-overlay pointer-events-none" />
 
       <div className="container relative z-10">
