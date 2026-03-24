@@ -1,74 +1,84 @@
 
 
-## แผนงาน: อีเมลแจ้งเตือน + Stripe Payment + ภาพสินค้า + ทดสอบมือถือ
+## แผนงาน: Parallax Effects + Checkout/Tracking UI Upgrade + Mobile QA
 
 ---
 
-### 1. ภาพสินค้า — รอการอัปโหลด
+### 1. Scroll-Triggered Parallax — Hero & Product Sections
 
-ลิงก์ genspark.ai ทั้ง 50 ลิงก์ไม่สามารถเข้าถึงได้ (Access Denied) กรุณาอัปโหลดภาพโดยตรงผ่านแชท (กดปุ่ม + แล้วเลือก Attach) ได้สูงสุด 10 ภาพต่อข้อความ ส่งได้หลายข้อความจนครบ
+**HeroSection.tsx:**
+- ใช้ `useScroll` + `useTransform` จาก Framer Motion สร้าง parallax layers:
+  - Background image เลื่อนช้ากว่า scroll (translateY 0→-15%)
+  - Gold ambient glow ขยับตาม scroll
+  - Content text เลื่อนเร็วขึ้นเล็กน้อย (0→-5%) สร้างมิติ
+  - Banner overlay เลื่อนทิศตรงข้าม
+- เพิ่ม `ref` ให้ section สำหรับ `useScroll({ target })`
 
-หลังได้รับภาพ จะนำไปใช้ใน:
-- Hero section background/banner
-- Product gallery (4 ภาพ)
-- Review/brand sections
-- เก็บใน `public/images/` เป็น static assets
-
----
-
-### 2. เชื่อมต่อ Stripe Payment Gateway
-
-Lovable มี Stripe integration พร้อมใช้ รองรับบัตรเครดิต/เดบิต และ PromptPay ในไทย
-
-**ขั้นตอน:**
-1. เปิดใช้งาน Stripe ผ่าน `stripe--enable_stripe` (ระบบจะขอ Secret Key จากคุณ)
-2. สร้าง Edge Function `create-checkout` สำหรับสร้าง Stripe Checkout Session
-3. สร้าง Edge Function `stripe-webhook` สำหรับรับ payment confirmation จาก Stripe
-4. อัปเดต `Checkout.tsx` ให้ redirect ไป Stripe Checkout แทน mock payment
-5. อัปเดต `OrderContext` ให้เปลี่ยนสถานะอัตโนมัติเมื่อ webhook ยืนยัน
-
-**ไฟล์ที่สร้าง/แก้ไข:**
-- `supabase/functions/create-checkout/index.ts` — สร้าง Stripe session
-- `supabase/functions/stripe-webhook/index.ts` — รับ webhook events
-- `src/pages/Checkout.tsx` — เปลี่ยนจาก mock เป็น Stripe
-- `src/contexts/OrderContext.tsx` — ลบ `simulatePayment`, เพิ่ม Stripe flow
+**ProductSection.tsx:**
+- Background glow เคลื่อนไหวตาม scroll position
+- Gallery slide-in จากซ้าย, product info จากขวา ด้วย `whileInView` ที่มีอยู่แล้ว (เสริม parallax offset เล็กน้อย)
 
 ---
 
-### 3. ระบบแจ้งเตือนทางอีเมล
+### 2. Checkout Pages — Visual Depth & Micro-interactions
 
-สร้างระบบส่งอีเมลแจ้งเตือนเมื่อมีออเดอร์ใหม่หรือสถานะเปลี่ยน
+**CheckoutShippingForm.tsx:**
+- เพิ่ม glassmorphism card wrapper (`glass` class + `bg-gradient-card`)
+- Staggered animation ให้แต่ละ field เลื่อนเข้ามาทีละตัว
+- Input focus states: border glow สีทอง, subtle scale
+- Progress bar animated ระหว่าง step 1↔2
 
-**ขั้นตอน:**
-1. ตั้งค่า email domain ผ่าน email setup dialog
-2. ตั้งค่า email infrastructure (tables, queues, Edge Function)
-3. Scaffold transactional email templates:
-   - **ออเดอร์ใหม่** — ส่งให้ admin เมื่อมีคำสั่งซื้อเข้า
-   - **ยืนยันคำสั่งซื้อ** — ส่งให้ลูกค้าหลังชำระเงินสำเร็จ
-   - **อัปเดตสถานะ** — ส่งให้ลูกค้าเมื่อสถานะเปลี่ยน (จัดส่ง/จัดส่งสำเร็จ)
-4. เรียกใช้จาก `stripe-webhook` และ `updateOrderStatus`
+**CheckoutPaymentForm.tsx:**
+- Payment method cards: hover-lift effect, gold border glow เมื่อเลือก
+- Animated checkmark เมื่อเลือก payment method
+- Coupon input: success animation (shimmer) เมื่อใช้สำเร็จ
 
-**ไฟล์ที่สร้าง:**
-- `supabase/functions/send-order-email/index.ts`
-- Email templates (React Email)
+**CheckoutSummary.tsx:**
+- เพิ่ม noise overlay + radial gold glow เหมือน main sections
+- Animated total counter (count-up effect)
+- Separator ใช้ `gold-divider` class
+
+**Checkout.tsx (parent):**
+- เพิ่ม background layer: noise texture + subtle radial glow
+- Step indicator: animated connecting line, pulse บน active step
+- Page transition: AnimatePresence สำหรับสลับ step
+
+**OrderSuccess.tsx:**
+- เพิ่ม confetti-like particle animation หลังจาก success
+- Background: noise + radial gold ambient
+- Card: glass effect + stronger shadow
+
+**OrderTracking.tsx:**
+- เพิ่ม background layers (noise + gradient) เหมือนหน้าหลัก
+- Search card: glass morphism
+- Status timeline: animated progress bar เชื่อมระหว่าง steps, gold glow บน active step
+- Result card: staggered entry animation
 
 ---
 
-### 4. ทดสอบ Responsive บนมือถือ
+### 3. Mobile Responsive QA
 
-ใช้ browser tools ทดสอบทุกหน้าที่ viewport 390x844 (iPhone):
-- หน้าแรก (Hero, Product, Review, FAQ, Contact, Footer)
-- Checkout flow
-- Order Success / Tracking
-- Privacy / Terms
-- Admin Dashboard
+ใช้ browser tools ทดสอบที่ viewport 390x844:
+- หน้าแรก (Hero parallax, Product, Review, FAQ, Contact, Footer)
+- Checkout flow ทั้ง shipping form และ payment
+- Order Success page
+- Order Tracking page
+- Privacy / Terms pages
+
+รายงานปัญหาที่พบและแก้ไข
 
 ---
 
-### ลำดับการทำงาน
+### ไฟล์ที่แก้ไข
 
-1. **Stripe** — enable + สร้าง Edge Functions + แก้ checkout flow
-2. **Email** — ตั้งค่า domain + infrastructure + templates
-3. **ภาพ** — รอรับภาพจากคุณ แล้วนำไปใส่
-4. **ทดสอบมือถือ** — ทดสอบ responsive ทุกหน้า
+| ไฟล์ | การเปลี่ยนแปลง |
+|------|---------------|
+| `src/components/HeroSection.tsx` | Parallax layers ด้วย useScroll/useTransform |
+| `src/components/ProductSection.tsx` | Subtle parallax on ambient glow |
+| `src/components/checkout/CheckoutShippingForm.tsx` | Glass card, staggered fields, focus glow |
+| `src/components/checkout/CheckoutPaymentForm.tsx` | Hover-lift cards, selection animation |
+| `src/components/checkout/CheckoutSummary.tsx` | Noise overlay, gold divider, glass |
+| `src/pages/Checkout.tsx` | Background layers, animated step indicator |
+| `src/pages/OrderSuccess.tsx` | Background depth, enhanced animations |
+| `src/pages/OrderTracking.tsx` | Glass cards, animated timeline, background layers |
 
