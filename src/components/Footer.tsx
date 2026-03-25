@@ -17,6 +17,7 @@ export default function Footer() {
             <h4 className="font-thai font-semibold text-sm text-foreground mb-4 tracking-wide">ลิงก์สำคัญ</h4>
             <ul className="space-y-3">
               {[
+                { to: '/brand-story', label: 'เรื่องราวของแบรนด์' },
                 { to: '/privacy', label: 'นโยบายความเป็นส่วนตัว' },
                 { to: '/terms', label: 'เงื่อนไขการสั่งซื้อ' },
                 { to: '/tracking', label: 'ติดตามคำสั่งซื้อ' },
