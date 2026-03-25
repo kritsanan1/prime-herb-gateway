@@ -13,6 +13,7 @@ import OrderTracking from "./pages/OrderTracking";
 import Admin from "./pages/Admin";
 import Privacy from "./pages/Privacy";
 import Terms from "./pages/Terms";
+import BrandStory from "./pages/BrandStory";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -34,6 +35,7 @@ const App = () => (
                 <Route path="/admin" element={<Admin />} />
                 <Route path="/privacy" element={<Privacy />} />
                 <Route path="/terms" element={<Terms />} />
+                <Route path="/brand-story" element={<BrandStory />} />
                 <Route path="*" element={<NotFound />} />
               </Routes>
             </BrowserRouter>
