@@ -69,8 +69,8 @@ export default {
         },
       },
       fontFamily: {
-        thai: ["'Noto Sans Thai'", "sans-serif"],
-        display: ["'Cormorant Garamond'", "'Noto Sans Thai'", "serif"],
+        thai: ["'Sarabun'", "sans-serif"],
+        display: ["'Playfair Display'", "'Sarabun'", "serif"],
       },
       borderRadius: {
         lg: "var(--radius)",
@@ -95,8 +95,8 @@ export default {
           "100%": { backgroundPosition: "200% 0" },
         },
         "pulse-gold": {
-          "0%, 100%": { boxShadow: "0 0 15px hsl(40 65% 58% / 0.15)" },
-          "50%": { boxShadow: "0 0 35px hsl(40 65% 58% / 0.35)" },
+          "0%, 100%": { boxShadow: "0 0 15px hsl(43 64% 52% / 0.15)" },
+          "50%": { boxShadow: "0 0 35px hsl(43 64% 52% / 0.35)" },
         },
         "float": {
           "0%, 100%": { transform: "translateY(0)" },

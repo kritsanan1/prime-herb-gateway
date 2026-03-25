@@ -13,7 +13,7 @@
     --popover: 240 8% 10%;
     --popover-foreground: 40 10% 92%;
 
-    --primary: 40 65% 58%;
+    --primary: 43 64% 52%;
     --primary-foreground: 240 10% 4%;
 
     --secondary: 240 6% 14%;
@@ -22,7 +22,7 @@
     --muted: 240 5% 18%;
     --muted-foreground: 40 5% 55%;
 
-    --accent: 40 65% 58%;
+    --accent: 43 64% 52%;
     --accent-foreground: 240 10% 4%;
 
     --destructive: 0 72% 51%;
@@ -30,33 +30,33 @@
 
     --border: 240 5% 18%;
     --input: 240 5% 18%;
-    --ring: 40 65% 58%;
+    --ring: 43 64% 52%;
 
     --radius: 0.5rem;
 
-    --gold: 40 65% 58%;
-    --gold-light: 40 70% 70%;
-    --gold-dark: 40 55% 40%;
-    --gold-glow: 40 80% 65%;
+    --gold: 43 64% 52%;
+    --gold-light: 43 70% 68%;
+    --gold-dark: 43 55% 38%;
+    --gold-glow: 43 80% 62%;
     --charcoal: 240 8% 12%;
     --charcoal-light: 240 6% 16%;
 
-    --gradient-gold: linear-gradient(135deg, hsl(40 65% 50%), hsl(40 70% 68%), hsl(38 60% 52%));
+    --gradient-gold: linear-gradient(135deg, hsl(43 64% 46%), hsl(43 70% 62%), hsl(40 60% 48%));
     --gradient-dark: linear-gradient(180deg, hsl(240 10% 4%), hsl(240 8% 7%));
     --gradient-card: linear-gradient(145deg, hsl(240 8% 10%), hsl(240 8% 6%));
-    --gradient-radial-gold: radial-gradient(ellipse at 50% 0%, hsl(40 65% 58% / 0.08) 0%, transparent 60%);
-    --shadow-gold: 0 4px 30px -8px hsl(40 65% 58% / 0.25);
+    --gradient-radial-gold: radial-gradient(ellipse at 50% 0%, hsl(43 64% 52% / 0.08) 0%, transparent 60%);
+    --shadow-gold: 0 4px 30px -8px hsl(43 64% 52% / 0.25);
     --shadow-card: 0 8px 32px -12px hsl(0 0% 0% / 0.5);
-    --shadow-gold-intense: 0 8px 40px -8px hsl(40 65% 58% / 0.35), 0 0 60px -20px hsl(40 65% 58% / 0.15);
+    --shadow-gold-intense: 0 8px 40px -8px hsl(43 64% 52% / 0.35), 0 0 60px -20px hsl(43 64% 52% / 0.15);
 
     --sidebar-background: 240 8% 6%;
     --sidebar-foreground: 40 10% 85%;
-    --sidebar-primary: 40 65% 58%;
+    --sidebar-primary: 43 64% 52%;
     --sidebar-primary-foreground: 240 10% 4%;
     --sidebar-accent: 240 6% 14%;
     --sidebar-accent-foreground: 40 10% 85%;
     --sidebar-border: 240 5% 18%;
-    --sidebar-ring: 40 65% 58%;
+    --sidebar-ring: 43 64% 52%;
   }
 }
 
@@ -67,13 +67,13 @@
 
   body {
     @apply bg-background text-foreground;
-    font-family: 'Noto Sans Thai', sans-serif;
+    font-family: 'Sarabun', sans-serif;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
   }
 
   h1, h2, h3, h4, h5, h6 {
-    font-family: 'Cormorant Garamond', 'Noto Sans Thai', serif;
+    font-family: 'Playfair Display', 'Sarabun', serif;
     letter-spacing: 0.02em;
   }
 
