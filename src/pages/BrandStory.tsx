@@ -95,7 +95,39 @@ export default function BrandStory() {
           </div>
         </section>
 
-        {/* Timeline */}
+        {/* Product Showcase Gallery */}
+        <section className="relative py-16 md:py-24 overflow-hidden">
+          <div className="absolute inset-0 noise-overlay pointer-events-none" />
+          <div className="container relative z-10">
+            <div className="grid grid-cols-2 md:grid-cols-3 gap-4 md:gap-6 max-w-5xl mx-auto">
+              {[
+                { src: '/images/gallery/product-display.jpg', alt: 'Dr.Arty Premium Package', span: 'row-span-2' },
+                { src: '/images/gallery/brand-confidence.jpg', alt: 'Confidence', span: '' },
+                { src: '/images/gallery/product-launch.jpg', alt: 'Product Launch', span: '' },
+                { src: '/images/gallery/lifestyle-man.jpg', alt: 'Lifestyle', span: 'md:col-span-2' },
+                { src: '/images/gallery/brand-story.jpg', alt: 'Brand Story', span: 'col-span-2 md:col-span-1' },
+              ].map((img, i) => (
+                <motion.div
+                  key={i}
+                  initial={{ opacity: 0, scale: 0.9 }}
+                  whileInView={{ opacity: 1, scale: 1 }}
+                  viewport={{ once: true }}
+                  transition={{ delay: i * 0.1, duration: 0.6 }}
+                  className={`rounded-2xl overflow-hidden border border-border/40 group ${img.span}`}
+                >
+                  <img
+                    src={img.src}
+                    alt={img.alt}
+                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700"
+                    loading="lazy"
+                  />
+                </motion.div>
+              ))}
+            </div>
+          </div>
+        </section>
+
+
         <section className="relative py-20 md:py-28 bg-gradient-dark overflow-hidden">
           <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[600px] h-[400px] bg-radial-gold opacity-30 pointer-events-none" />
           <div className="absolute inset-0 noise-overlay pointer-events-none" />

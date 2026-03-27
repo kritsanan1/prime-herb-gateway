@@ -9,6 +9,7 @@ const PILLARS = [
     description: 'จากปรัชญาของผู้ก่อตั้งสู่แบรนด์ที่ผู้ชายไว้วางใจ — เบื้องหลังทุกขวดคือความตั้งใจที่จะมอบสิ่งที่ดีที่สุด',
     tone: 'Warm · Inspirational · Authentic',
     percentage: 25,
+    image: '/images/gallery/brand-story.jpg',
   },
   {
     icon: Microscope,
@@ -17,6 +18,7 @@ const PILLARS = [
     description: 'สมุนไพรแท้ 100% ผ่านกระบวนการคัดเลือกมาตรฐานสากล — ไม่มีทางลัด ไม่มียาชา ไม่มีสารเคมีแฝง',
     tone: 'Authoritative · Clean · Educational',
     percentage: 30,
+    image: '/images/gallery/product-premium.jpg',
   },
   {
     icon: Star,
@@ -25,6 +27,7 @@ const PILLARS = [
     description: 'ประสบการณ์จริงจากผู้ที่ไว้วางใจ — ความรู้สึกมั่นใจ ความภูมิใจ และความพอใจที่สัมผัสได้',
     tone: 'Genuine · Relatable · Subtle Pride',
     percentage: 25,
+    image: '/images/gallery/before-after.jpg',
   },
   {
     icon: Crown,
@@ -33,6 +36,7 @@ const PILLARS = [
     description: 'การดูแลตัวเองอย่างมีระดับคือจุดเริ่มต้นของความมั่นใจ — ทุกเช้าที่เริ่มต้นดี คือวันที่ดีกว่า',
     tone: 'Aspirational · Cinematic · Elegant',
     percentage: 20,
+    image: '/images/gallery/lifestyle-man.jpg',
   },
 ];
 
