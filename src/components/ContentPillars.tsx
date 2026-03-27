@@ -9,6 +9,7 @@ const PILLARS = [
     description: 'จากปรัชญาของผู้ก่อตั้งสู่แบรนด์ที่ผู้ชายไว้วางใจ — เบื้องหลังทุกขวดคือความตั้งใจที่จะมอบสิ่งที่ดีที่สุด',
     tone: 'Warm · Inspirational · Authentic',
     percentage: 25,
+    image: '/images/gallery/brand-story.jpg',
   },
   {
     icon: Microscope,
@@ -17,6 +18,7 @@ const PILLARS = [
     description: 'สมุนไพรแท้ 100% ผ่านกระบวนการคัดเลือกมาตรฐานสากล — ไม่มีทางลัด ไม่มียาชา ไม่มีสารเคมีแฝง',
     tone: 'Authoritative · Clean · Educational',
     percentage: 30,
+    image: '/images/gallery/product-premium.jpg',
   },
   {
     icon: Star,
@@ -25,6 +27,7 @@ const PILLARS = [
     description: 'ประสบการณ์จริงจากผู้ที่ไว้วางใจ — ความรู้สึกมั่นใจ ความภูมิใจ และความพอใจที่สัมผัสได้',
     tone: 'Genuine · Relatable · Subtle Pride',
     percentage: 25,
+    image: '/images/gallery/before-after.jpg',
   },
   {
     icon: Crown,
@@ -33,6 +36,7 @@ const PILLARS = [
     description: 'การดูแลตัวเองอย่างมีระดับคือจุดเริ่มต้นของความมั่นใจ — ทุกเช้าที่เริ่มต้นดี คือวันที่ดีกว่า',
     tone: 'Aspirational · Cinematic · Elegant',
     percentage: 20,
+    image: '/images/gallery/lifestyle-man.jpg',
   },
 ];
 
@@ -68,19 +72,30 @@ export default function ContentPillars() {
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
               transition={{ delay: i * 0.15, duration: 0.7, ease: [0.22, 1, 0.36, 1] }}
-              className="group relative bg-gradient-card border border-border/60 rounded-2xl p-7 hover:border-gold/40 transition-all duration-500 shadow-card hover-lift overflow-hidden"
+              className="group relative bg-gradient-card border border-border/60 rounded-2xl hover:border-gold/40 transition-all duration-500 shadow-card hover-lift overflow-hidden"
             >
+              {/* Image */}
+              <div className="h-36 overflow-hidden">
+                <img
+                  src={pillar.image}
+                  alt={pillar.title}
+                  className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700"
+                  loading="lazy"
+                />
+                <div className="absolute inset-x-0 top-0 h-36 bg-gradient-to-b from-transparent to-card/90" />
+              </div>
+
               {/* Hover glow */}
               <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-700 pointer-events-none">
                 <div className="absolute top-0 left-1/2 -translate-x-1/2 w-32 h-32 bg-radial-gold opacity-40" />
               </div>
 
               {/* Percentage badge */}
-              <div className="absolute top-4 right-4 text-[10px] text-primary/40 font-display font-bold">
+              <div className="absolute top-4 right-4 text-[10px] text-primary/40 font-display font-bold z-10">
                 {pillar.percentage}%
               </div>
 
-              <div className="relative z-10">
+              <div className="relative z-10 p-7 pt-4">
                 {/* Icon */}
                 <motion.div
                   whileHover={{ scale: 1.1, rotate: -5 }}
