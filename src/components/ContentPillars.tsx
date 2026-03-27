@@ -72,15 +72,26 @@ export default function ContentPillars() {
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
               transition={{ delay: i * 0.15, duration: 0.7, ease: [0.22, 1, 0.36, 1] }}
-              className="group relative bg-gradient-card border border-border/60 rounded-2xl p-7 hover:border-gold/40 transition-all duration-500 shadow-card hover-lift overflow-hidden"
+              className="group relative bg-gradient-card border border-border/60 rounded-2xl hover:border-gold/40 transition-all duration-500 shadow-card hover-lift overflow-hidden"
             >
+              {/* Image */}
+              <div className="h-36 overflow-hidden">
+                <img
+                  src={pillar.image}
+                  alt={pillar.title}
+                  className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700"
+                  loading="lazy"
+                />
+                <div className="absolute inset-x-0 top-0 h-36 bg-gradient-to-b from-transparent to-card/90" />
+              </div>
+
               {/* Hover glow */}
               <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-700 pointer-events-none">
                 <div className="absolute top-0 left-1/2 -translate-x-1/2 w-32 h-32 bg-radial-gold opacity-40" />
               </div>
 
               {/* Percentage badge */}
-              <div className="absolute top-4 right-4 text-[10px] text-primary/40 font-display font-bold">
+              <div className="absolute top-4 right-4 text-[10px] text-primary/40 font-display font-bold z-10">
                 {pillar.percentage}%
               </div>
 
