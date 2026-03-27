@@ -8,9 +8,9 @@ export default function Footer() {
       <div className="container relative z-10">
         <div className="grid md:grid-cols-3 gap-10 mb-10">
           <div>
-            <h3 className="font-display font-bold text-xl text-gradient-gold mb-4 tracking-wide">Dr.Arty Prime Herb</h3>
+            <h3 className="font-display font-bold text-xl text-gradient-gold mb-4 tracking-wide">Dr. Arty Prime Herb Intimate Care</h3>
             <p className="text-xs text-muted-foreground/60 font-thai leading-relaxed">
-              ผลิตภัณฑ์เสริมอาหารพรีเมียมสำหรับผู้ชายยุคใหม่ ที่ใส่ใจในการดูแลตัวเองอย่างมีระดับ
+              ผลิตภัณฑ์ดูแลตัวเองระดับพรีเมียมสำหรับผู้ชายยุคใหม่ ที่ผสานสมุนไพรธรรมชาติเข้ากับมาตรฐาน medical-grade
             </p>
           </div>
           <div>
@@ -52,7 +52,7 @@ export default function Footer() {
             เนื้อหาบนเว็บไซต์นี้เป็นข้อมูลผลิตภัณฑ์ทั่วไป ไม่ใช่คำแนะนำทางการแพทย์ ผลลัพธ์อาจแตกต่างกันในแต่ละบุคคล
           </p>
           <p className="text-center text-[10px] text-muted-foreground/30 font-thai">
-            © {new Date().getFullYear()} Dr.Arty Prime Herb. All rights reserved.
+            © {new Date().getFullYear()} Dr. Arty Prime Herb Intimate Care. All rights reserved.
           </p>
         </div>
       </div>

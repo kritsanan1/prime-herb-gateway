@@ -9,7 +9,7 @@ const TIMELINE = [
   {
     year: 'จุดเริ่มต้น',
     title: 'จากความเชื่อสู่แบรนด์',
-    description: 'คุณอาทิตย์ ผู้ก่อตั้ง Dr.Arty เชื่อมาตลอดว่าผู้ชายก็สมควรได้รับการดูแลอย่างมีระดับ — ไม่ใช่สินค้าที่ต้องซ่อน แต่คือสิ่งที่ควรภูมิใจ',
+    description: 'คุณอาทิตย์ ผู้ก่อตั้ง Dr.Arty เชื่อมาตลอดว่าผู้ชายยุคใหม่สมควรได้รับการดูแลตัวเองอย่างมีระดับ — ด้วยผลิตภัณฑ์ที่ออกแบบมาเพื่อเสริมสร้างความมั่นใจอย่างพรีเมียม',
     icon: Heart,
   },
   {
@@ -86,7 +86,7 @@ export default function BrandStory() {
             >
               <div className="w-16 h-px bg-gradient-gold mx-auto mb-10" />
               <blockquote className="text-xl md:text-2xl font-display font-medium text-foreground leading-relaxed italic mb-8">
-                "Dr.Arty คือแบรนด์ดูแลจุดซ่อนเร้นชายระดับพรีเมียม ที่ผสานสมุนไพรธรรมชาติ 100% เข้ากับมาตรฐาน medical-grade เพื่อมอบประสบการณ์การดูแลตัวเองที่หรูหรา น่าเชื่อถือ"
+                "Dr.Arty คือแบรนด์ดูแลตัวเองระดับพรีเมียมสำหรับผู้ชายยุคใหม่ ที่ผสานสมุนไพรธรรมชาติ 100% เข้ากับมาตรฐาน medical-grade เพื่อมอบประสบการณ์ความมั่นใจอย่างมีระดับ"
               </blockquote>
               <p className="text-sm text-primary font-thai font-semibold">— คุณอาทิตย์</p>
               <p className="text-xs text-muted-foreground font-thai mt-1">ผู้ก่อตั้ง Dr.Arty</p>
