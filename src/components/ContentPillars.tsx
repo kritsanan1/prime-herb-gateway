@@ -95,7 +95,7 @@ export default function ContentPillars() {
                 {pillar.percentage}%
               </div>
 
-              <div className="relative z-10">
+              <div className="relative z-10 p-7 pt-4">
                 {/* Icon */}
                 <motion.div
                   whileHover={{ scale: 1.1, rotate: -5 }}
