@@ -4,6 +4,7 @@ import { motion } from 'framer-motion';
 import { CheckCircle2, XCircle, Package, ArrowRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useOrders } from '@/contexts/OrderContext';
+import { useOrderNotification } from '@/hooks/useOrderNotification';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 import CartDrawer from '@/components/CartDrawer';
@@ -14,6 +15,7 @@ export default function OrderSuccessPage() {
   const { getOrder } = useOrders();
   const [order, setOrder] = useState(orderNumber ? getOrder(orderNumber) : undefined);
   const failed = searchParams.get('status') === 'failed';
+  useOrderNotification(orderNumber);
 
   useEffect(() => {
     if (orderNumber) {
@@ -80,7 +82,7 @@ export default function OrderSuccessPage() {
                     </div>
                   </motion.div>
                   <h1 className="text-2xl font-display font-bold text-foreground mb-3">สั่งซื้อสำเร็จ!</h1>
-                  <p className="text-sm text-muted-foreground font-thai mb-2">ขอบคุณที่สั่งซื้อสินค้ากับ Dr.Arty Prime Herb</p>
+                  <p className="text-sm text-muted-foreground font-thai mb-2">ขอบคุณที่สั่งซื้อสินค้ากับ Dr. Arty Prime Herb Intimate Care</p>
 
                   {order && (
                     <motion.div

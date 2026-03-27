@@ -4,6 +4,7 @@ import { Search, Package, CheckCircle2, Truck, CreditCard, Clock, XCircle, Rotat
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { useOrders, Order, OrderStatus } from '@/contexts/OrderContext';
+import { useOrderNotification } from '@/hooks/useOrderNotification';
 import { ORDER_STATUS_LABELS, PAYMENT_METHOD_LABELS } from '@/types';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
@@ -28,6 +29,7 @@ export default function OrderTrackingPage() {
   const [result, setResult] = useState<Order | null | undefined>(undefined);
   const [searching, setSearching] = useState(false);
   const { findOrder } = useOrders();
+  useOrderNotification(result?.orderNumber);
 
   const handleSearch = async () => {
     if (!orderNum || !contact) return;

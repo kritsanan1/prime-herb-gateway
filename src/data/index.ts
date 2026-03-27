@@ -6,8 +6,8 @@ export const PRODUCTS: Product[] = [
     name: 'Dr.Arty Prime Herb',
     description: 'ผลิตภัณฑ์เสริมอาหารพรีเมียมสำหรับผู้ชายยุคใหม่ ผลิตจากสมุนไพรคัดสรรคุณภาพสูง ในแพ็กเกจที่ดูดีและพกพาสะดวก เหมาะสำหรับผู้ที่ใส่ใจในการดูแลตัวเองอย่างมีระดับ',
     shortDesc: 'ผลิตภัณฑ์เสริมอาหารพรีเมียมจากสมุนไพรคัดสรร',
-    price: 1290,
-    originalPrice: 1590,
+    price: 249,
+    originalPrice: 349,
     image: '/product-hero.jpg',
     stock: 50,
     features: [

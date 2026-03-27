@@ -62,7 +62,7 @@ export default function Header() {
             Dr.Arty
           </span>
           <span className="text-[10px] md:text-xs text-muted-foreground font-thai hidden sm:block tracking-[0.15em] uppercase">
-            Prime Herb
+            Prime Herb Intimate Care
           </span>
         </Link>
 
