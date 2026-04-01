@@ -1,69 +1,60 @@
 
 
-## แผนงาน: Push Notification + Price Update + Brand Copy + Site Name
+## แผนงาน: Swipe/Pinch Gallery + Hero/Review Backgrounds + Visual QA
 
 ---
 
-### สรุปงานทั้งหมด
+### 1. Product Gallery — Swipe Gesture + Pinch-to-Zoom
 
-1. **อัปเดตราคาสินค้า** — เปลี่ยนราคาเต็มเป็น 349 บาท ลดเหลือ 249 บาท
-2. **แก้ไขข้อความผู้ก่อตั้ง** — ลบการอ้างอิง "จุดซ่อนเร้น" ออก ใช้ข้อความที่เน้น "การดูแลตัวเองอย่างมีระดับ" แทน
-3. **เปลี่ยนชื่อเว็บไซต์** — เป็น "Dr. Arty Prime Herb Intimate Care" ทุกที่ (title, meta, header, footer, schema)
-4. **ระบบ Push Notification** — แจ้งเตือนลูกค้าบนเว็บเมื่อสถานะออเดอร์เปลี่ยน
+**ไฟล์:** `src/components/ProductGallery.tsx`
 
----
+**Swipe Gesture (Main Image):**
+- ใช้ `useDrag` จาก Framer Motion (`drag="x"` + `onDragEnd`) บน main image container
+- ตรวจจับ swipe direction จาก `velocity.x` หรือ `offset.x` threshold (>50px)
+- Swipe ซ้าย → ภาพถัดไป, Swipe ขวา → ภาพก่อนหน้า
+- เพิ่ม `dragConstraints={{ left: 0, right: 0 }}` เพื่อให้ snap กลับ
+- ซ่อนปุ่ม chevron บนมือถือ แสดง swipe indicator dot แทน
 
-### 1. อัปเดตราคาสินค้าในฐานข้อมูล
+**Pinch-to-Zoom (Lightbox):**
+- Track touch events ด้วย `onTouchStart`, `onTouchMove`, `onTouchEnd` สำหรับ 2-finger pinch
+- คำนวณ distance ระหว่าง 2 touches → แปลงเป็น scale factor (1x–3x)
+- ใช้ `transform: scale()` + `transform-origin` ตาม pinch center
+- Double-tap toggle zoom (1x ↔ 2x)
+- เมื่อ zoomed in → สามารถ pan ด้วย 1 finger
+- Reset zoom เมื่อเปลี่ยนภาพ
 
-- ใช้ insert tool เพื่อ UPDATE ตาราง `products` — ตั้ง `price = 249`, `original_price = 349`
-- อัปเดต `src/data/index.ts` ให้ตรงกัน (fallback data)
-
-### 2. แก้ไขข้อความผู้ก่อตั้งใน Brand Story
-
-**ไฟล์:** `src/pages/BrandStory.tsx`
-- เปลี่ยน blockquote จาก "แบรนด์ดูแลจุดซ่อนเร้นชาย..." เป็นข้อความใหม่:
-  > "Dr.Arty คือแบรนด์ดูแลตัวเองระดับพรีเมียมสำหรับผู้ชายยุคใหม่ ที่ผสานสมุนไพรธรรมชาติ 100% เข้ากับมาตรฐาน medical-grade เพื่อมอบประสบการณ์ความมั่นใจอย่างมีระดับ"
-- อัปเดต Timeline item แรก ลบ "ไม่ใช่สินค้าที่ต้องซ่อน" → เปลี่ยนเป็นข้อความเกี่ยวกับการดูแลตัวเองอย่างพรีเมียม
-
-### 3. เปลี่ยนชื่อเว็บไซต์
-
-**ไฟล์ที่แก้ไข:**
-- `index.html` — title, og:title, twitter:title, schema.org name
-- `src/components/Header.tsx` — แสดง "Dr. Arty" + "Prime Herb Intimate Care"
-- `src/components/Footer.tsx` — ชื่อแบรนด์
-
-### 4. ระบบ Push Notification สำหรับลูกค้า
-
-ใช้ **Browser Notifications API** (ไม่ต้องใช้ service worker ที่ซับซ้อน) ร่วมกับ Supabase Realtime:
-
-**ไฟล์ใหม่:** `src/hooks/useOrderNotification.ts`
-- รับ `orderNumber` เป็น parameter
-- Subscribe ไปที่ `orders` table ผ่าน Supabase Realtime โดยฟิลเตอร์ `order_number`
-- เมื่อตรวจพบ UPDATE event → ขอ permission และส่ง browser notification
-- แสดง toast notification ในเว็บด้วย
-
-**ไฟล์ที่แก้ไข:**
-- `src/pages/OrderTracking.tsx` — เรียกใช้ `useOrderNotification` เมื่อลูกค้าเข้ามาติดตามออเดอร์
-- `src/pages/OrderSuccess.tsx` — เรียกใช้หลังสั่งซื้อสำเร็จ ถามขอ permission notification
-
-**Flow:**
-1. ลูกค้าสั่งซื้อสำเร็จ → หน้า OrderSuccess ขอ permission notification
-2. ลูกค้าเปิดหน้า OrderTracking → subscribe realtime updates
-3. Admin เปลี่ยนสถานะ → ลูกค้าได้รับ browser notification + toast ทันที
+**ไม่ต้องติดตั้ง library เพิ่ม** — ใช้ Framer Motion drag + native touch events
 
 ---
 
-### ไฟล์ที่จะแก้ไข/สร้าง
+### 2. Hero Background + Review Section Background
+
+**ไฟล์:** `src/components/HeroSection.tsx`
+- เปลี่ยน `hero-bg.png` เป็นรูปจาก gallery ที่มีอยู่แล้ว เช่น `product-lifestyle.png` หรือ `product-desk.png` ที่เหมาะกับ Hero
+- เพิ่ม subtle product image floating layer (เช่น `product-white.png`) เป็น parallax layer เพิ่มเติม
+
+**ไฟล์:** `src/components/ReviewSection.tsx`
+- เพิ่ม background image layer ด้วย `brand-confidence.jpg` หรือ `lifestyle-man.jpg`
+- ใช้ `opacity-[0.05]` + blur + gradient overlay เพื่อสร้าง subtle depth โดยไม่รบกวนการอ่าน
+- เพิ่ม parallax effect ด้วย `useScroll` + `useTransform` เหมือน sections อื่น
+
+---
+
+### 3. Visual QA — ทดสอบบนมือถือและเดสก์ท็อป
+
+- ใช้ browser tool ตรวจสอบ:
+  - หน้าหลัก (Hero, Product Gallery, Content Pillars, Reviews)
+  - หน้า Brand Story
+  - ทดสอบทั้ง desktop (1280px) และ mobile (390px)
+  - ตรวจสอบว่ารูปภาพ load ถูกต้องและไม่ broken
+
+---
+
+### ไฟล์ที่จะแก้ไข
 
 | ไฟล์ | การเปลี่ยนแปลง |
 |---|---|
-| DB: `products` table | UPDATE price=249, original_price=349 |
-| `src/data/index.ts` | อัปเดตราคา fallback |
-| `src/pages/BrandStory.tsx` | แก้ข้อความผู้ก่อตั้ง + timeline |
-| `index.html` | เปลี่ยน title/meta เป็นชื่อเต็ม |
-| `src/components/Header.tsx` | อัปเดตชื่อแบรนด์ |
-| `src/components/Footer.tsx` | อัปเดตชื่อแบรนด์ |
-| `src/hooks/useOrderNotification.ts` | **ใหม่** — hook สำหรับ realtime notification |
-| `src/pages/OrderTracking.tsx` | เพิ่ม notification hook |
-| `src/pages/OrderSuccess.tsx` | เพิ่ม notification permission request |
+| `src/components/ProductGallery.tsx` | Swipe gesture + pinch-to-zoom |
+| `src/components/HeroSection.tsx` | เพิ่ม product image parallax layer |
+| `src/components/ReviewSection.tsx` | เพิ่ม background image + parallax |
 
