@@ -16,6 +16,8 @@ export default function HeroSection() {
   const contentY = useTransform(scrollYProgress, [0, 1], ['0%', '-5%']);
   const bannerY = useTransform(scrollYProgress, [0, 1], ['0%', '10%']);
   const overlayOpacity = useTransform(scrollYProgress, [0, 0.5], [0.6, 0.9]);
+  const productY = useTransform(scrollYProgress, [0, 1], ['0%', '20%']);
+  const productOpacity = useTransform(scrollYProgress, [0, 0.6], [0.12, 0]);
 
   const scrollToProducts = () => {
     document.getElementById('products')?.scrollIntoView({ behavior: 'smooth' });
@@ -26,7 +28,7 @@ export default function HeroSection() {
       {/* Parallax background */}
       <motion.div
         className="absolute inset-0 bg-cover bg-center scale-110"
-        style={{ backgroundImage: `url(/images/hero-bg.png)`, y: bgY }}
+        style={{ backgroundImage: `url(/images/gallery/lifestyle-man.jpg)`, y: bgY }}
       />
       {/* Multi-layer overlay */}
       <motion.div className="absolute inset-0 bg-gradient-to-b from-background/80 via-background/50 to-background/90" style={{ opacity: overlayOpacity }} />
@@ -37,6 +39,18 @@ export default function HeroSection() {
         className="absolute top-0 left-1/2 -translate-x-1/2 w-[800px] h-[600px] bg-radial-gold opacity-60 pointer-events-none"
         style={{ y: glowY, scale: glowScale }}
       />
+
+      {/* Parallax floating product image */}
+      <motion.div
+        className="absolute right-[5%] top-1/2 -translate-y-1/2 w-[320px] h-[420px] pointer-events-none hidden lg:block"
+        style={{ y: productY, opacity: productOpacity }}
+      >
+        <img
+          src="/images/gallery/product-hero-gold.jpg"
+          alt=""
+          className="w-full h-full object-contain rounded-2xl blur-[1px]"
+        />
+      </motion.div>
 
       {/* Parallax banner overlay */}
       <motion.div className="absolute inset-0 flex items-center justify-center opacity-10 pointer-events-none" style={{ y: bannerY }}>
