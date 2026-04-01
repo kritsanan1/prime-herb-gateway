@@ -3,6 +3,7 @@ import HeroSection from '@/components/HeroSection';
 import ProductSection from '@/components/ProductSection';
 import ContentPillars from '@/components/ContentPillars';
 import ReviewSection from '@/components/ReviewSection';
+import ArticlesPreview from '@/components/ArticlesPreview';
 import FAQSection from '@/components/FAQSection';
 import ContactSection from '@/components/ContactSection';
 import Footer from '@/components/Footer';
