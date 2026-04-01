@@ -19,6 +19,7 @@ export default function Index() {
         <ProductSection />
         <ContentPillars />
         <ReviewSection />
+        <ArticlesPreview />
         <FAQSection />
         <ContactSection />
       </main>
