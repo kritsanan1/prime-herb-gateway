@@ -9,6 +9,7 @@ const NAV_ITEMS = [
   { label: 'หน้าแรก', href: '/' },
   { label: 'สินค้า', href: '/#products' },
   { label: 'รีวิว', href: '/#reviews' },
+  { label: 'บทความ', href: '/articles' },
   { label: 'คำถามพบบ่อย', href: '/#faq' },
   { label: 'ติดตามคำสั่งซื้อ', href: '/tracking' },
   { label: 'ติดต่อ', href: '/#contact' },
