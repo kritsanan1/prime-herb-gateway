@@ -1,10 +1,31 @@
-import { motion } from 'framer-motion';
+import { useRef } from 'react';
+import { motion, useScroll, useTransform } from 'framer-motion';
 import { Star, Quote } from 'lucide-react';
 import { REVIEWS } from '@/data';
 
 export default function ReviewSection() {
+  const sectionRef = useRef<HTMLElement>(null);
+  const { scrollYProgress } = useScroll({
+    target: sectionRef,
+    offset: ['start end', 'end start'],
+  });
+  const bgY = useTransform(scrollYProgress, [0, 1], ['0%', '-12%']);
+
   return (
-    <section id="reviews" className="relative py-24 md:py-36 overflow-hidden">
+    <section id="reviews" ref={sectionRef} className="relative py-24 md:py-36 overflow-hidden">
+      {/* Parallax background image */}
+      <motion.div
+        className="absolute inset-0 pointer-events-none"
+        style={{ y: bgY }}
+      >
+        <img
+          src="/images/gallery/brand-confidence.jpg"
+          alt=""
+          className="w-full h-full object-cover opacity-[0.05] blur-sm scale-110"
+        />
+      </motion.div>
+      <div className="absolute inset-0 bg-gradient-to-b from-background via-background/95 to-background pointer-events-none" />
+
       {/* Ambient glow */}
       <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[600px] bg-radial-gold opacity-30 pointer-events-none" />
 
@@ -33,7 +54,6 @@ export default function ReviewSection() {
               transition={{ delay: i * 0.12, duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
               className="group relative bg-gradient-card border border-border/60 rounded-2xl p-6 hover:border-gold/40 transition-all duration-500 shadow-card hover-lift"
             >
-              {/* Decorative quote */}
               <Quote className="absolute top-4 right-4 w-6 h-6 text-primary/10 group-hover:text-primary/20 transition-colors duration-500" />
 
               <div className="flex gap-1 mb-4">
