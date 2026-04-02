@@ -481,6 +481,8 @@ export default function AdminPage() {
               )}
             </div>
           )}
+
+          {tab === 'articles' && <ArticleManager />}
         </main>
       </div>
     </div>

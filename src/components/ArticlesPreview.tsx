@@ -58,7 +58,7 @@ export default function ArticlesPreview() {
 
         {/* Grid */}
         <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-5">
-          {featured.map((article, i) => (
+          {articles.map((article, i) => (
             <motion.div
               key={article.id}
               initial={{ opacity: 0, y: 30 }}
@@ -89,7 +89,7 @@ export default function ArticlesPreview() {
                   <div className="flex items-center justify-between text-[10px] text-muted-foreground">
                     <span className="flex items-center gap-1 font-thai">
                       <Clock className="w-3 h-3" />
-                      {article.readTime} นาที
+                      {article.read_time} นาที
                     </span>
                     <span className="flex items-center gap-1 text-primary font-thai">
                       อ่านต่อ <ArrowRight className="w-3 h-3" />
