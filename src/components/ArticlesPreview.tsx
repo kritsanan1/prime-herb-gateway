@@ -1,8 +1,10 @@
+import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { ArrowRight, Clock, Youtube } from 'lucide-react';
 import { ARTICLES } from '@/data/articles';
 import { Badge } from '@/components/ui/badge';
+import { supabase } from '@/integrations/supabase/client';
 
 const featured = ARTICLES.slice(0, 4);
 
