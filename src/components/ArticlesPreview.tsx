@@ -6,9 +6,24 @@ import { ARTICLES } from '@/data/articles';
 import { Badge } from '@/components/ui/badge';
 import { supabase } from '@/integrations/supabase/client';
 
-const featured = ARTICLES.slice(0, 4);
-
 export default function ArticlesPreview() {
+  const [articles, setArticles] = useState(ARTICLES.slice(0, 4).map(a => ({
+    id: a.id, slug: a.slug, title: a.title, image: a.image,
+    category: a.category, read_time: a.readTime,
+  })));
+
+  useEffect(() => {
+    supabase
+      .from('articles')
+      .select('id, slug, title, image, category, read_time')
+      .eq('is_published', true)
+      .order('published_at', { ascending: false })
+      .limit(4)
+      .then(({ data }) => {
+        if (data && data.length > 0) setArticles(data);
+      });
+  }, []);
+
   return (
     <section id="articles" className="py-20 md:py-28 relative">
       <div className="absolute inset-0 pointer-events-none">
