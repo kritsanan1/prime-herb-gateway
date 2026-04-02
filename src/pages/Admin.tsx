@@ -11,6 +11,7 @@ import { Package, Users, DollarSign, Eye, ChevronLeft, BarChart3, Lock, Shopping
 import CouponManager from '@/components/admin/CouponManager';
 import AnalyticsDashboard from '@/components/admin/AnalyticsDashboard';
 import OrderMonitor from '@/components/admin/OrderMonitor';
+import ArticleManager from '@/components/admin/ArticleManager';
 
 function AdminLogin() {
   const { signIn, signUp } = useAuth();
