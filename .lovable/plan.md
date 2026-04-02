@@ -1,60 +1,58 @@
 
 
-## แผนงาน: Swipe/Pinch Gallery + Hero/Review Backgrounds + Visual QA
+## แผนงาน: ระบบจัดการบทความ Admin + ทดสอบ LINE & Articles
 
 ---
 
-### 1. Product Gallery — Swipe Gesture + Pinch-to-Zoom
+### 1. สร้างตาราง `articles` ในฐานข้อมูล
 
-**ไฟล์:** `src/components/ProductGallery.tsx`
+**Migration SQL:**
+- สร้างตาราง `articles` พร้อมคอลัมน์: `id`, `slug` (unique), `title`, `excerpt`, `content`, `image`, `category`, `read_time`, `published_at`, `youtube_url`, `is_published`, `created_at`, `updated_at`
+- RLS: Admin สามารถ CRUD ทั้งหมด, Public สามารถ SELECT เฉพาะ `is_published = true`
+- Seed ข้อมูล 10 บทความเดิมจาก `src/data/articles.ts` เข้าตาราง
+- เปิด realtime สำหรับตาราง articles
 
-**Swipe Gesture (Main Image):**
-- ใช้ `useDrag` จาก Framer Motion (`drag="x"` + `onDragEnd`) บน main image container
-- ตรวจจับ swipe direction จาก `velocity.x` หรือ `offset.x` threshold (>50px)
-- Swipe ซ้าย → ภาพถัดไป, Swipe ขวา → ภาพก่อนหน้า
-- เพิ่ม `dragConstraints={{ left: 0, right: 0 }}` เพื่อให้ snap กลับ
-- ซ่อนปุ่ม chevron บนมือถือ แสดง swipe indicator dot แทน
+### 2. สร้าง ArticleManager component ใน Admin
 
-**Pinch-to-Zoom (Lightbox):**
-- Track touch events ด้วย `onTouchStart`, `onTouchMove`, `onTouchEnd` สำหรับ 2-finger pinch
-- คำนวณ distance ระหว่าง 2 touches → แปลงเป็น scale factor (1x–3x)
-- ใช้ `transform: scale()` + `transform-origin` ตาม pinch center
-- Double-tap toggle zoom (1x ↔ 2x)
-- เมื่อ zoomed in → สามารถ pan ด้วย 1 finger
-- Reset zoom เมื่อเปลี่ยนภาพ
+**ไฟล์ใหม่:** `src/components/admin/ArticleManager.tsx`
+- แสดงรายการบทความทั้งหมดจาก DB (title, category, published status, date)
+- ปุ่ม "เพิ่มบทความ" เปิด dialog/form สำหรับสร้างบทความใหม่
+- ปุ่ม "แก้ไข" เปิด form พร้อมข้อมูลเดิม
+- ปุ่ม "ลบ" พร้อม confirm dialog
+- Form fields: title, slug (auto-generate จาก title), excerpt, content (textarea), image URL, category, read_time, youtube_url, is_published toggle
+- ใช้ Supabase client query ตรง
 
-**ไม่ต้องติดตั้ง library เพิ่ม** — ใช้ Framer Motion drag + native touch events
+### 3. อัปเดต Admin page เพิ่ม tab "บทความ"
 
----
+**ไฟล์:** `src/pages/Admin.tsx`
+- เพิ่ม tab `articles` ใน TABS array พร้อม icon `FileText`
+- เพิ่ม type `'articles'` ใน Tab union
+- Render `<ArticleManager />` เมื่อ tab === 'articles'
 
-### 2. Hero Background + Review Section Background
+### 4. อัปเดต Articles pages ให้ดึงจาก DB
 
-**ไฟล์:** `src/components/HeroSection.tsx`
-- เปลี่ยน `hero-bg.png` เป็นรูปจาก gallery ที่มีอยู่แล้ว เช่น `product-lifestyle.png` หรือ `product-desk.png` ที่เหมาะกับ Hero
-- เพิ่ม subtle product image floating layer (เช่น `product-white.png`) เป็น parallax layer เพิ่มเติม
+**ไฟล์:** `src/pages/Articles.tsx` + `src/pages/ArticleDetail.tsx` + `src/components/ArticlesPreview.tsx`
+- เปลี่ยนจากใช้ static `ARTICLES` array เป็น fetch จาก Supabase `articles` table
+- Fallback ใช้ static data ถ้า DB ว่าง
+- Filter เฉพาะ `is_published = true` สำหรับ public pages
 
-**ไฟล์:** `src/components/ReviewSection.tsx`
-- เพิ่ม background image layer ด้วย `brand-confidence.jpg` หรือ `lifestyle-man.jpg`
-- ใช้ `opacity-[0.05]` + blur + gradient overlay เพื่อสร้าง subtle depth โดยไม่รบกวนการอ่าน
-- เพิ่ม parallax effect ด้วย `useScroll` + `useTransform` เหมือน sections อื่น
+### 5. ทดสอบ LINE Flex Message + หน้า Articles
 
----
-
-### 3. Visual QA — ทดสอบบนมือถือและเดสก์ท็อป
-
-- ใช้ browser tool ตรวจสอบ:
-  - หน้าหลัก (Hero, Product Gallery, Content Pillars, Reviews)
-  - หน้า Brand Story
-  - ทดสอบทั้ง desktop (1280px) และ mobile (390px)
-  - ตรวจสอบว่ารูปภาพ load ถูกต้องและไม่ broken
+- ใช้ browser tool ทดสอบ:
+  - เปิดหน้า `/articles` ตรวจรูปภาพและลิงก์ (desktop + mobile)
+  - เปิดหน้า `/articles/:slug` ตรวจเนื้อหาและ YouTube link
+  - ทดสอบส่ง LINE Flex Message ผ่าน edge function (progress_update + social_approval)
 
 ---
 
-### ไฟล์ที่จะแก้ไข
+### ไฟล์ที่จะแก้ไข/สร้าง
 
 | ไฟล์ | การเปลี่ยนแปลง |
 |---|---|
-| `src/components/ProductGallery.tsx` | Swipe gesture + pinch-to-zoom |
-| `src/components/HeroSection.tsx` | เพิ่ม product image parallax layer |
-| `src/components/ReviewSection.tsx` | เพิ่ม background image + parallax |
+| DB Migration | สร้างตาราง `articles` + RLS + seed data |
+| `src/components/admin/ArticleManager.tsx` | **ใหม่** — CRUD UI สำหรับบทความ |
+| `src/pages/Admin.tsx` | เพิ่ม tab "บทความ" |
+| `src/pages/Articles.tsx` | ดึงข้อมูลจาก DB แทน static |
+| `src/pages/ArticleDetail.tsx` | ดึงข้อมูลจาก DB แทน static |
+| `src/components/ArticlesPreview.tsx` | ดึงข้อมูลจาก DB แทน static |
 
