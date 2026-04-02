@@ -14,6 +14,54 @@ export type Database = {
   }
   public: {
     Tables: {
+      articles: {
+        Row: {
+          category: string
+          content: string
+          created_at: string
+          excerpt: string
+          id: string
+          image: string
+          is_published: boolean
+          published_at: string | null
+          read_time: number
+          slug: string
+          title: string
+          updated_at: string
+          youtube_url: string | null
+        }
+        Insert: {
+          category?: string
+          content?: string
+          created_at?: string
+          excerpt?: string
+          id?: string
+          image?: string
+          is_published?: boolean
+          published_at?: string | null
+          read_time?: number
+          slug: string
+          title: string
+          updated_at?: string
+          youtube_url?: string | null
+        }
+        Update: {
+          category?: string
+          content?: string
+          created_at?: string
+          excerpt?: string
+          id?: string
+          image?: string
+          is_published?: boolean
+          published_at?: string | null
+          read_time?: number
+          slug?: string
+          title?: string
+          updated_at?: string
+          youtube_url?: string | null
+        }
+        Relationships: []
+      }
       coupons: {
         Row: {
           code: string

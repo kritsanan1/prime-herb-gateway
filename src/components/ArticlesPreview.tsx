@@ -1,12 +1,29 @@
+import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { ArrowRight, Clock, Youtube } from 'lucide-react';
 import { ARTICLES } from '@/data/articles';
 import { Badge } from '@/components/ui/badge';
-
-const featured = ARTICLES.slice(0, 4);
+import { supabase } from '@/integrations/supabase/client';
 
 export default function ArticlesPreview() {
+  const [articles, setArticles] = useState(ARTICLES.slice(0, 4).map(a => ({
+    id: a.id, slug: a.slug, title: a.title, image: a.image,
+    category: a.category, read_time: a.readTime,
+  })));
+
+  useEffect(() => {
+    supabase
+      .from('articles')
+      .select('id, slug, title, image, category, read_time')
+      .eq('is_published', true)
+      .order('published_at', { ascending: false })
+      .limit(4)
+      .then(({ data }) => {
+        if (data && data.length > 0) setArticles(data);
+      });
+  }, []);
+
   return (
     <section id="articles" className="py-20 md:py-28 relative">
       <div className="absolute inset-0 pointer-events-none">
@@ -41,7 +58,7 @@ export default function ArticlesPreview() {
 
         {/* Grid */}
         <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-5">
-          {featured.map((article, i) => (
+          {articles.map((article, i) => (
             <motion.div
               key={article.id}
               initial={{ opacity: 0, y: 30 }}
@@ -72,7 +89,7 @@ export default function ArticlesPreview() {
                   <div className="flex items-center justify-between text-[10px] text-muted-foreground">
                     <span className="flex items-center gap-1 font-thai">
                       <Clock className="w-3 h-3" />
-                      {article.readTime} นาที
+                      {article.read_time} นาที
                     </span>
                     <span className="flex items-center gap-1 text-primary font-thai">
                       อ่านต่อ <ArrowRight className="w-3 h-3" />
