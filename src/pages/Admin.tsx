@@ -165,6 +165,7 @@ export default function AdminPage() {
     { id: 'products', label: 'สินค้า', icon: Package },
     { id: 'coupons', label: 'คูปอง', icon: Tag },
     { id: 'customers', label: 'ลูกค้า', icon: Users },
+    { id: 'articles', label: 'บทความ', icon: FileText },
   ];
 
   return (
