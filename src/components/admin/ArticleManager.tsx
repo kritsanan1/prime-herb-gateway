@@ -9,6 +9,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { Badge } from '@/components/ui/badge';
 import { Plus, Pencil, Trash2, Loader2, Eye, EyeOff } from 'lucide-react';
 import { toast } from 'sonner';
+import ArticleImageUpload from './ArticleImageUpload';
 
 interface Article {
   id: string;
@@ -216,15 +217,10 @@ export default function ArticleManager() {
                 />
               </div>
             </div>
-            <div>
-              <Label className="font-thai text-xs">รูปภาพ (URL)</Label>
-              <Input
-                value={form.image}
-                onChange={e => setForm(f => ({ ...f, image: e.target.value }))}
-                placeholder="/images/articles/article-01.jpg"
-                className="bg-secondary border-border font-thai text-xs"
-              />
-            </div>
+            <ArticleImageUpload
+              value={form.image}
+              onChange={url => setForm(f => ({ ...f, image: url }))}
+            />
             <div>
               <Label className="font-thai text-xs">YouTube URL (ถ้ามี)</Label>
               <Input
