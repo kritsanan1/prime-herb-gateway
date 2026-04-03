@@ -1,12 +1,12 @@
+// Cloudflare Workers entry point — only used in production build
+// @ts-nocheck
 import { Hono } from 'hono'
 import { serveStatic } from 'hono/cloudflare-workers'
 
 const app = new Hono()
 
-// Serve static files from dist directory
 app.use('/*', serveStatic({ root: './dist' }))
 
-// Fallback to index.html for SPA routing
 app.get('*', (c) => {
   return c.html(`
     <!DOCTYPE html>
@@ -14,16 +14,10 @@ app.get('*', (c) => {
       <head>
         <meta charset="UTF-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-        <title>Prime Herb Gateway</title>
-        <script>
-          // Redirect to the main app
-          window.location.href = '/index.html';
-        </script>
+        <title>Dr. Arty Prime Herb Intimate Care</title>
+        <script>window.location.href = '/index.html';</script>
       </head>
-      <body>
-        <div id="root"></div>
-        <script type="module" src="/assets/index.js"></script>
-      </body>
+      <body><div id="root"></div></body>
     </html>
   `)
 })

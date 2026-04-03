@@ -40,7 +40,7 @@ export class PerformanceMonitor {
     // First Input Delay
     try {
       const fidObserver = new PerformanceObserver((list) => {
-        const firstInput = list.getEntries()[0] as PerformanceEntry;
+        const firstInput = list.getEntries()[0] as any;
         this.metrics.firstInputDelay = firstInput.processingStart - firstInput.startTime;
         console.log('📊 FID:', this.metrics.firstInputDelay.toFixed(2), 'ms');
       });
