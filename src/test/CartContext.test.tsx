@@ -76,7 +76,7 @@ describe('CartContext', () => {
     // Add multiple items
     act(() => {
       result.current.addItem(mockProduct);
-      result.current.addItem({ ...mockProduct, id: 2, name: 'Another Product' });
+      result.current.addItem({ ...mockProduct, id: '2', name: 'Another Product' });
     });
 
     expect(result.current.items).toHaveLength(2);
