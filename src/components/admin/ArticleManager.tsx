@@ -9,6 +9,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { Badge } from '@/components/ui/badge';
 import { Plus, Pencil, Trash2, Loader2, Eye, EyeOff } from 'lucide-react';
 import { toast } from 'sonner';
+import ArticleImageUpload from './ArticleImageUpload';
 
 interface Article {
   id: string;
