@@ -111,7 +111,7 @@ function AdminLogin() {
   );
 }
 
-type Tab = 'overview' | 'analytics' | 'monitor' | 'orders' | 'products' | 'coupons' | 'customers' | 'articles';
+type Tab = 'overview' | 'analytics' | 'monitor' | 'orders' | 'products' | 'coupons' | 'customers' | 'articles' | 'calendar';
 
 export default function AdminPage() {
   const { user, isAdmin, loading: authLoading, signOut } = useAuth();
