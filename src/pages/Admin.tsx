@@ -7,11 +7,12 @@ import { ORDER_STATUS_LABELS, PAYMENT_METHOD_LABELS } from '@/types';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Package, Users, DollarSign, Eye, ChevronLeft, BarChart3, Lock, ShoppingBag, Settings, LogOut, Loader2, Tag, TrendingUp, Download, Bell, FileText } from 'lucide-react';
+import { Package, Users, DollarSign, Eye, ChevronLeft, BarChart3, Lock, ShoppingBag, Settings, LogOut, Loader2, Tag, TrendingUp, Download, Bell, FileText, CalendarDays } from 'lucide-react';
 import CouponManager from '@/components/admin/CouponManager';
 import AnalyticsDashboard from '@/components/admin/AnalyticsDashboard';
 import OrderMonitor from '@/components/admin/OrderMonitor';
 import ArticleManager from '@/components/admin/ArticleManager';
+import ContentCalendar from '@/components/admin/ContentCalendar';
 
 function AdminLogin() {
   const { signIn, signUp } = useAuth();
@@ -110,7 +111,7 @@ function AdminLogin() {
   );
 }
 
-type Tab = 'overview' | 'analytics' | 'monitor' | 'orders' | 'products' | 'coupons' | 'customers' | 'articles';
+type Tab = 'overview' | 'analytics' | 'monitor' | 'orders' | 'products' | 'coupons' | 'customers' | 'articles' | 'calendar';
 
 export default function AdminPage() {
   const { user, isAdmin, loading: authLoading, signOut } = useAuth();
@@ -166,6 +167,7 @@ export default function AdminPage() {
     { id: 'coupons', label: 'คูปอง', icon: Tag },
     { id: 'customers', label: 'ลูกค้า', icon: Users },
     { id: 'articles', label: 'บทความ', icon: FileText },
+    { id: 'calendar', label: 'Content Calendar', icon: CalendarDays },
   ];
 
   return (
@@ -483,6 +485,8 @@ export default function AdminPage() {
           )}
 
           {tab === 'articles' && <ArticleManager />}
+
+          {tab === 'calendar' && <ContentCalendar />}
         </main>
       </div>
     </div>

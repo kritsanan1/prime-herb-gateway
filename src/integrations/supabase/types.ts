@@ -62,6 +62,51 @@ export type Database = {
         }
         Relationships: []
       }
+      content_calendar: {
+        Row: {
+          approval_sent_at: string | null
+          author: string
+          caption: string
+          created_at: string
+          hashtags: string | null
+          id: string
+          image_url: string | null
+          notes: string | null
+          platform: string
+          scheduled_at: string | null
+          status: Database["public"]["Enums"]["content_status"]
+          updated_at: string
+        }
+        Insert: {
+          approval_sent_at?: string | null
+          author?: string
+          caption?: string
+          created_at?: string
+          hashtags?: string | null
+          id?: string
+          image_url?: string | null
+          notes?: string | null
+          platform?: string
+          scheduled_at?: string | null
+          status?: Database["public"]["Enums"]["content_status"]
+          updated_at?: string
+        }
+        Update: {
+          approval_sent_at?: string | null
+          author?: string
+          caption?: string
+          created_at?: string
+          hashtags?: string | null
+          id?: string
+          image_url?: string | null
+          notes?: string | null
+          platform?: string
+          scheduled_at?: string | null
+          status?: Database["public"]["Enums"]["content_status"]
+          updated_at?: string
+        }
+        Relationships: []
+      }
       coupons: {
         Row: {
           code: string
@@ -275,6 +320,12 @@ export type Database = {
     }
     Enums: {
       app_role: "admin" | "user"
+      content_status:
+        | "draft"
+        | "pending_approval"
+        | "approved"
+        | "published"
+        | "rejected"
       order_status:
         | "pending"
         | "paid"
@@ -413,6 +464,13 @@ export const Constants = {
   public: {
     Enums: {
       app_role: ["admin", "user"],
+      content_status: [
+        "draft",
+        "pending_approval",
+        "approved",
+        "published",
+        "rejected",
+      ],
       order_status: [
         "pending",
         "paid",

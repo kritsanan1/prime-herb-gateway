@@ -10,6 +10,7 @@ import { Badge } from '@/components/ui/badge';
 import { Plus, Pencil, Trash2, Loader2, Eye, EyeOff } from 'lucide-react';
 import { toast } from 'sonner';
 import ArticleImageUpload from './ArticleImageUpload';
+import RichTextEditor from './RichTextEditor';
 
 interface Article {
   id: string;
@@ -250,11 +251,10 @@ export default function ArticleManager() {
             </div>
             <div>
               <Label className="font-thai text-xs">เนื้อหา</Label>
-              <Textarea
+              <RichTextEditor
                 value={form.content}
-                onChange={e => setForm(f => ({ ...f, content: e.target.value }))}
-                rows={10}
-                className="bg-secondary border-border font-thai text-sm"
+                onChange={v => setForm(f => ({ ...f, content: v }))}
+                placeholder="เขียนเนื้อหาบทความ..."
               />
             </div>
             <div className="flex items-center gap-3">
