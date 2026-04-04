@@ -10,6 +10,7 @@ import { Badge } from '@/components/ui/badge';
 import { Plus, Pencil, Trash2, Loader2, Eye, EyeOff } from 'lucide-react';
 import { toast } from 'sonner';
 import ArticleImageUpload from './ArticleImageUpload';
+import RichTextEditor from './RichTextEditor';
 
 interface Article {
   id: string;
