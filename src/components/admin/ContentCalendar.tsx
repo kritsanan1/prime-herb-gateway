@@ -7,7 +7,7 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Badge } from '@/components/ui/badge';
-import { Plus, Pencil, Trash2, Loader2, Send, Calendar, Facebook } from 'lucide-react';
+import { Plus, Pencil, Trash2, Loader2, Send, Calendar } from 'lucide-react';
 import { toast } from 'sonner';
 
 interface ContentItem {
@@ -60,7 +60,6 @@ export default function ContentCalendar() {
   const [form, setForm] = useState(EMPTY);
   const [saving, setSaving] = useState(false);
   const [sendingApproval, setSendingApproval] = useState<string | null>(null);
-  const [postingFB, setPostingFB] = useState<string | null>(null);
   const [deleteId, setDeleteId] = useState<string | null>(null);
 
   const fetchItems = async () => {
@@ -154,26 +153,6 @@ export default function ContentCalendar() {
     setSendingApproval(null);
   };
 
-  const postToFacebook = async (item: ContentItem) => {
-    if (item.platform !== 'facebook') return;
-    setPostingFB(item.id);
-    try {
-      const res = await fetch('/api/facebook/post', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ message: [item.caption, item.hashtags].filter(Boolean).join('\n\n'), image_url: item.image_url || undefined }),
-      });
-      const data = await res.json();
-      if (!res.ok || !data.success) throw new Error(data.error || 'โพสต์ไม่สำเร็จ');
-      await supabase.from('content_calendar').update({ status: 'published' }).eq('id', item.id);
-      toast.success('โพสต์ขึ้น Facebook สำเร็จ! 🎉');
-      fetchItems();
-    } catch (err: any) {
-      toast.error('โพสต์ไม่สำเร็จ: ' + err.message);
-    }
-    setPostingFB(null);
-  };
-
   const getPlatformEmoji = (p: string) => PLATFORMS.find(pl => pl.value === p)?.emoji || '📱';
 
   return (
@@ -232,17 +211,6 @@ export default function ContentCalendar() {
                       >
                         {sendingApproval === item.id ? <Loader2 className="w-3 h-3 animate-spin" /> : <Send className="w-3 h-3 mr-1" />}
                         ส่งอนุมัติ
-                      </Button>
-                    )}
-                    {item.platform === 'facebook' && item.status !== 'published' && (
-                      <Button
-                        size="sm"
-                        onClick={() => postToFacebook(item)}
-                        disabled={postingFB === item.id}
-                        className="text-[10px] font-thai bg-blue-600 hover:bg-blue-700 text-white h-7 px-2"
-                      >
-                        {postingFB === item.id ? <Loader2 className="w-3 h-3 animate-spin" /> : <Facebook className="w-3 h-3 mr-1" />}
-                        โพสต์
                       </Button>
                     )}
                     <Button size="icon" variant="ghost" onClick={() => openEdit(item)} className="h-7 w-7">

@@ -7,16 +7,12 @@ import { ORDER_STATUS_LABELS, PAYMENT_METHOD_LABELS } from '@/types';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Package, Users, DollarSign, Eye, ChevronLeft, BarChart3, Lock, ShoppingBag, LogOut, Loader2, Tag, TrendingUp, Bell, FileText, CalendarDays, Facebook, Settings } from 'lucide-react';
+import { Package, Users, DollarSign, Eye, ChevronLeft, BarChart3, Lock, ShoppingBag, Settings, LogOut, Loader2, Tag, TrendingUp, Download, Bell, FileText, CalendarDays } from 'lucide-react';
 import CouponManager from '@/components/admin/CouponManager';
 import AnalyticsDashboard from '@/components/admin/AnalyticsDashboard';
 import OrderMonitor from '@/components/admin/OrderMonitor';
 import ArticleManager from '@/components/admin/ArticleManager';
 import ContentCalendar from '@/components/admin/ContentCalendar';
-import FacebookInsights from '@/components/admin/FacebookInsights';
-import FacebookInbox from '@/components/admin/FacebookInbox';
-import FacebookComments from '@/components/admin/FacebookComments';
-import FacebookAds from '@/components/admin/FacebookAds';
 
 function AdminLogin() {
   const { signIn, signUp } = useAuth();
@@ -115,8 +111,7 @@ function AdminLogin() {
   );
 }
 
-type Tab = 'overview' | 'analytics' | 'monitor' | 'orders' | 'products' | 'coupons' | 'customers' | 'articles' | 'calendar' | 'fb_insights' | 'fb_inbox' | 'fb_comments' | 'fb_ads';
-type FbSubTab = 'insights' | 'inbox' | 'comments' | 'ads';
+type Tab = 'overview' | 'analytics' | 'monitor' | 'orders' | 'products' | 'coupons' | 'customers' | 'articles' | 'calendar';
 
 export default function AdminPage() {
   const { user, isAdmin, loading: authLoading, signOut } = useAuth();
@@ -163,7 +158,7 @@ export default function AdminPage() {
   const paidOrders = orders.filter(o => o.paymentStatus === 'paid').length;
   const uniqueCustomers = new Set(orders.map(o => o.customer.phone)).size;
 
-  const TABS: { id: Tab; label: string; icon: typeof Package; group?: string }[] = [
+  const TABS: { id: Tab; label: string; icon: typeof Package }[] = [
     { id: 'overview', label: 'ภาพรวม', icon: BarChart3 },
     { id: 'analytics', label: 'Analytics', icon: TrendingUp },
     { id: 'monitor', label: 'Monitor', icon: Bell },
@@ -173,10 +168,6 @@ export default function AdminPage() {
     { id: 'customers', label: 'ลูกค้า', icon: Users },
     { id: 'articles', label: 'บทความ', icon: FileText },
     { id: 'calendar', label: 'Content Calendar', icon: CalendarDays },
-    { id: 'fb_insights', label: 'FB Insights', icon: Facebook, group: 'facebook' },
-    { id: 'fb_inbox', label: 'FB Inbox', icon: Facebook, group: 'facebook' },
-    { id: 'fb_comments', label: 'FB Comments', icon: Facebook, group: 'facebook' },
-    { id: 'fb_ads', label: 'FB Ads', icon: Facebook, group: 'facebook' },
   ];
 
   return (
@@ -200,27 +191,12 @@ export default function AdminPage() {
       <div className="flex">
         <aside className="w-56 border-r border-border min-h-[calc(100vh-57px)] p-4 hidden md:block">
           <nav className="space-y-1">
-            {TABS.filter(t => !t.group).map(t => (
+            {TABS.map(t => (
               <button
                 key={t.id}
                 onClick={() => { setTab(t.id); setSelectedOrder(null); }}
                 className={`w-full flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-thai transition-colors ${
                   tab === t.id ? 'bg-primary/10 text-primary' : 'text-muted-foreground hover:text-foreground hover:bg-secondary'
-                }`}
-              >
-                <t.icon className="w-4 h-4" />
-                {t.label}
-              </button>
-            ))}
-            <div className="pt-3 pb-1">
-              <p className="text-[10px] font-semibold text-muted-foreground/60 uppercase tracking-widest px-3">Facebook</p>
-            </div>
-            {TABS.filter(t => t.group === 'facebook').map(t => (
-              <button
-                key={t.id}
-                onClick={() => { setTab(t.id); setSelectedOrder(null); }}
-                className={`w-full flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-thai transition-colors ${
-                  tab === t.id ? 'bg-blue-500/10 text-blue-400' : 'text-muted-foreground hover:text-foreground hover:bg-secondary'
                 }`}
               >
                 <t.icon className="w-4 h-4" />
@@ -511,14 +487,6 @@ export default function AdminPage() {
           {tab === 'articles' && <ArticleManager />}
 
           {tab === 'calendar' && <ContentCalendar />}
-
-          {tab === 'fb_insights' && <FacebookInsights />}
-
-          {tab === 'fb_inbox' && <FacebookInbox />}
-
-          {tab === 'fb_comments' && <FacebookComments />}
-
-          {tab === 'fb_ads' && <FacebookAds />}
         </main>
       </div>
     </div>

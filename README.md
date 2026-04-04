@@ -171,5 +171,4 @@ VITE_SUPABASE_PUBLISHABLE_KEY=your_publishable_key
 
 **Built with ❤️ for local businesses and communities**
 
-*Empowering local entrepreneurs to reach global markets through modern e-commerce solutions.*"# silver-octo-palm-tree" 
-"# silver-octo-palm-tree" 
+*Empowering local entrepreneurs to reach global markets through modern e-commerce solutions.*
