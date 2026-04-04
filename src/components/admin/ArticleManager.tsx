@@ -251,11 +251,10 @@ export default function ArticleManager() {
             </div>
             <div>
               <Label className="font-thai text-xs">เนื้อหา</Label>
-              <Textarea
+              <RichTextEditor
                 value={form.content}
-                onChange={e => setForm(f => ({ ...f, content: e.target.value }))}
-                rows={10}
-                className="bg-secondary border-border font-thai text-sm"
+                onChange={v => setForm(f => ({ ...f, content: v }))}
+                placeholder="เขียนเนื้อหาบทความ..."
               />
             </div>
             <div className="flex items-center gap-3">
