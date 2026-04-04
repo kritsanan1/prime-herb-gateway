@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useState, useCallback, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
+import { buildSupabaseFunctionUrl } from '@/lib/runtimeConfig';
 import { CartItem, CustomerInfo, PaymentMethod } from '@/types';
 
 export type OrderStatus = 'pending' | 'paid' | 'processing' | 'shipping' | 'delivered' | 'failed' | 'refunded';
@@ -70,6 +71,15 @@ function dbRowToOrder(row: any): Order {
   };
 }
 
+async function triggerSupabaseFunction(functionName: string, payload: unknown) {
+  const url = await buildSupabaseFunctionUrl(functionName);
+  return fetch(url, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload),
+  });
+}
+
 export const OrderProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [orders, setOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(false);
@@ -128,11 +138,11 @@ export const OrderProvider: React.FC<{ children: React.ReactNode }> = ({ childre
 
     // Send notifications (fire and forget)
     try {
-      const projectId = import.meta.env.VITE_SUPABASE_PROJECT_ID;
-      const payload = JSON.stringify({ type: 'new_order', order: data });
-      const headers = { 'Content-Type': 'application/json' };
-      fetch(`https://${projectId}.supabase.co/functions/v1/send-order-email`, { method: 'POST', headers, body: payload });
-      fetch(`https://${projectId}.supabase.co/functions/v1/line-notify`, { method: 'POST', headers, body: payload });
+      const payload = { type: 'new_order', order: data };
+      void Promise.allSettled([
+        triggerSupabaseFunction('send-order-email', payload),
+        triggerSupabaseFunction('line-notify', payload),
+      ]);
     } catch (e) {
       console.log('Notification skipped:', e);
     }
@@ -164,14 +174,14 @@ export const OrderProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     try {
       const order = orders.find(o => o.id === orderId);
       if (order) {
-        const projectId = import.meta.env.VITE_SUPABASE_PROJECT_ID;
-        const payload = JSON.stringify({
+        const payload = {
           type: 'status_update',
           order: { ...order, status, order_number: order.orderNumber, customer_name: order.customer.name, customer_phone: order.customer.phone, customer_email: order.customer.email, customer_address: order.customer.address },
-        });
-        const headers = { 'Content-Type': 'application/json' };
-        fetch(`https://${projectId}.supabase.co/functions/v1/send-order-email`, { method: 'POST', headers, body: payload });
-        fetch(`https://${projectId}.supabase.co/functions/v1/line-notify`, { method: 'POST', headers, body: payload });
+        };
+        void Promise.allSettled([
+          triggerSupabaseFunction('send-order-email', payload),
+          triggerSupabaseFunction('line-notify', payload),
+        ]);
       }
     } catch (e) {
       console.log('Notification skipped:', e);
@@ -189,22 +199,14 @@ export const OrderProvider: React.FC<{ children: React.ReactNode }> = ({ childre
 
   const createStripeCheckout = useCallback(async (order: Order): Promise<string> => {
     const totalQuantity = order.items.reduce((sum, item) => sum + item.quantity, 0);
-    const projectId = import.meta.env.VITE_SUPABASE_PROJECT_ID;
-    
-    const response = await fetch(
-      `https://${projectId}.supabase.co/functions/v1/create-checkout`,
-      {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          orderId: order.id,
-          orderNumber: order.orderNumber,
-          quantity: totalQuantity,
-          customerEmail: order.customer.email,
-          origin: window.location.origin,
-        }),
-      }
-    );
+
+    const response = await triggerSupabaseFunction('create-checkout', {
+      orderId: order.id,
+      orderNumber: order.orderNumber,
+      quantity: totalQuantity,
+      customerEmail: order.customer.email,
+      origin: window.location.origin,
+    });
 
     const data = await response.json();
     if (data.error) throw new Error(data.error);

@@ -1,152 +1,226 @@
 import { useState } from 'react';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { MessageSquare, Heart, Send, RefreshCw, AlertCircle, ChevronDown, ChevronUp, ExternalLink } from 'lucide-react';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import {
+  AlertCircle,
+  ChevronDown,
+  ChevronUp,
+  ExternalLink,
+  Heart,
+  MessageSquare,
+  RefreshCw,
+  Send,
+} from 'lucide-react';
+import { toast } from 'sonner';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
-import { toast } from 'sonner';
+import {
+  FacebookAdminApiError,
+  FacebookFeedComment,
+  FacebookFeedData,
+  FacebookFeedPost,
+  FacebookMutationData,
+  fetchFacebookAdmin,
+  getFacebookAdminErrorMessage,
+  postFacebookAdmin,
+} from '@/lib/facebookAdmin';
 
-interface Comment {
-  id: string;
-  message: string;
-  from: { name: string; id: string };
-  created_time: string;
-  like_count?: number;
-}
-interface Post {
-  id: string;
-  message?: string;
-  story?: string;
-  created_time: string;
-  full_picture?: string;
-  permalink_url?: string;
-  likes: { summary: { total_count: number } };
-  comments?: { data: Comment[] };
-}
+function timeAgo(iso: string | null) {
+  if (!iso) return 'Unknown time';
 
-function timeAgo(iso: string) {
   const diff = Date.now() - new Date(iso).getTime();
-  const m = Math.floor(diff / 60000);
-  if (m < 1) return 'เพิ่งโพสต์';
-  if (m < 60) return `${m} นาทีที่แล้ว`;
-  const h = Math.floor(m / 60);
-  if (h < 24) return `${h} ชม.ที่แล้ว`;
+  const minutes = Math.floor(diff / 60000);
+
+  if (minutes < 1) return 'Just now';
+  if (minutes < 60) return `${minutes}m ago`;
+
+  const hours = Math.floor(minutes / 60);
+  if (hours < 24) return `${hours}h ago`;
+
   return new Date(iso).toLocaleDateString('th-TH', { day: 'numeric', month: 'short' });
 }
 
-function PostCard({ post }: { post: Post }) {
-  const qc = useQueryClient();
+function CommentsErrorState({
+  error,
+  onRetry,
+}: {
+  error: unknown;
+  onRetry: () => void;
+}) {
+  const message = getFacebookAdminErrorMessage(error);
+  const details = error instanceof FacebookAdminApiError ? error.details : undefined;
+
+  return (
+    <Alert className="border-destructive/30 bg-destructive/10">
+      <AlertCircle className="h-4 w-4 text-destructive" />
+      <AlertDescription className="flex items-center justify-between gap-4 text-sm text-destructive">
+        <div className="space-y-1">
+          <p>{message}</p>
+          {details ? (
+            <p className="text-xs text-destructive/80">{JSON.stringify(details)}</p>
+          ) : null}
+        </div>
+        <Button size="sm" variant="outline" onClick={onRetry} className="border-destructive/40">
+          Retry
+        </Button>
+      </AlertDescription>
+    </Alert>
+  );
+}
+
+function CommentsEmptyState({ onRetry }: { onRetry: () => void }) {
+  return (
+    <div className="rounded-xl border border-border bg-gradient-card p-8 text-center">
+      <MessageSquare className="mx-auto mb-3 h-10 w-10 text-muted-foreground" />
+      <p className="text-sm text-muted-foreground">No Facebook comments are available right now.</p>
+      <Button size="sm" variant="outline" onClick={onRetry} className="mt-4 border-border">
+        <RefreshCw className="mr-2 h-3.5 w-3.5" />
+        Reload feed
+      </Button>
+    </div>
+  );
+}
+
+function PostCommentsEmptyState() {
+  return (
+    <div className="rounded-lg border border-dashed border-border/70 p-4 text-center text-sm text-muted-foreground">
+      No comments on this post yet.
+    </div>
+  );
+}
+
+function PostCard({ post }: { post: FacebookFeedPost }) {
+  const queryClient = useQueryClient();
   const [expanded, setExpanded] = useState(false);
   const [replies, setReplies] = useState<Record<string, string>>({});
   const [replyingTo, setReplyingTo] = useState<string | null>(null);
 
-  const comments = post.comments?.data || [];
+  const comments = post.comments ?? [];
 
   const replyMutation = useMutation({
-    mutationFn: async (commentId: string) => {
-      const res = await fetch(`/api/facebook/comments/${commentId}/reply`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ message: replies[commentId] }),
-      });
-      const data = await res.json();
-      if (!data.success) throw new Error(data.error || 'ตอบกลับไม่สำเร็จ');
-      return data;
-    },
+    mutationFn: (commentId: string) =>
+      postFacebookAdmin<FacebookMutationData>(`/api/facebook/comments/${commentId}/reply`, {
+        message: replies[commentId],
+      }),
     onSuccess: (_, commentId) => {
-      setReplies(r => ({ ...r, [commentId]: '' }));
+      setReplies((current) => ({ ...current, [commentId]: '' }));
       setReplyingTo(null);
-      toast.success('ตอบกลับ Comment สำเร็จ');
-      qc.invalidateQueries({ queryKey: ['/api/facebook/feed'] });
+      toast.success('Comment reply sent.');
+      queryClient.invalidateQueries({ queryKey: ['/api/facebook/feed'] });
     },
-    onError: (err: any) => toast.error(err.message),
+    onError: (error) => {
+      toast.error(getFacebookAdminErrorMessage(error));
+    },
   });
 
-  return (
-    <div className="bg-gradient-card border border-border rounded-xl overflow-hidden">
-      <div className="flex gap-3 p-4">
-        {post.full_picture && (
-          <img src={post.full_picture} alt="" className="w-16 h-16 rounded-lg object-cover shrink-0" />
-        )}
-        <div className="flex-1 min-w-0">
-          <p className="text-sm text-foreground font-thai line-clamp-2">
-            {post.message || post.story || '(ไม่มีข้อความ)'}
-          </p>
-          <div className="flex items-center gap-3 mt-2">
-            <span className="text-[11px] text-muted-foreground">{timeAgo(post.created_time)}</span>
-            <span className="flex items-center gap-1 text-[11px] text-rose-400">
-              <Heart className="w-3 h-3" /> {post.likes?.summary?.total_count || 0}
-            </span>
-            <button
-              onClick={() => setExpanded(e => !e)}
-              className="flex items-center gap-1 text-[11px] text-muted-foreground hover:text-foreground transition-colors"
-            >
-              <MessageSquare className="w-3 h-3" />
-              {comments.length} ความคิดเห็น
-              {expanded ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />}
-            </button>
-            {post.permalink_url && (
-              <a href={post.permalink_url} target="_blank" rel="noopener noreferrer"
-                className="flex items-center gap-1 text-[11px] text-muted-foreground hover:text-primary transition-colors ml-auto">
-                <ExternalLink className="w-3 h-3" /> ดูโพสต์
-              </a>
-            )}
+  const renderComment = (comment: FacebookFeedComment) => {
+    const replyValue = replies[comment.id] ?? '';
+    const isReplying = replyingTo === comment.id;
+
+    return (
+      <div key={comment.id} className="rounded-lg border border-border/70 bg-secondary/30 p-3">
+        <div className="mb-2 flex items-start justify-between gap-3">
+          <div>
+            <div className="flex items-center gap-2">
+              <p className="text-sm font-semibold text-foreground">{comment.fromName ?? 'Facebook user'}</p>
+              <span className="text-xs text-muted-foreground">{timeAgo(comment.createdTime)}</span>
+            </div>
+            <p className="mt-1 whitespace-pre-wrap text-sm text-foreground/90">{comment.message || '(No text)'}</p>
           </div>
+          {comment.likeCount > 0 ? (
+            <div className="flex items-center gap-1 text-xs text-muted-foreground">
+              <Heart className="h-3 w-3 text-rose-400" />
+              {comment.likeCount}
+            </div>
+          ) : null}
+        </div>
+
+        {isReplying ? (
+          <div className="space-y-2">
+            <Textarea
+              placeholder="Write a reply..."
+              value={replyValue}
+              onChange={(event) =>
+                setReplies((current) => ({ ...current, [comment.id]: event.target.value }))
+              }
+              className="min-h-[72px] resize-none border-border bg-background text-sm"
+              disabled={replyMutation.isPending}
+            />
+            <div className="flex items-center justify-end gap-2">
+              <Button
+                size="sm"
+                variant="ghost"
+                onClick={() => setReplyingTo(null)}
+                disabled={replyMutation.isPending}
+              >
+                Cancel
+              </Button>
+              <Button
+                size="sm"
+                onClick={() => replyMutation.mutate(comment.id)}
+                disabled={replyMutation.isPending || !replyValue.trim()}
+              >
+                {replyMutation.isPending ? (
+                  <RefreshCw className="mr-2 h-3.5 w-3.5 animate-spin" />
+                ) : (
+                  <Send className="mr-2 h-3.5 w-3.5" />
+                )}
+                Reply
+              </Button>
+            </div>
+          </div>
+        ) : (
+          <Button size="sm" variant="ghost" onClick={() => setReplyingTo(comment.id)}>
+            <MessageSquare className="mr-2 h-3.5 w-3.5" />
+            Reply
+          </Button>
+        )}
+      </div>
+    );
+  };
+
+  return (
+    <div className="overflow-hidden rounded-xl border border-border bg-gradient-card">
+      <div className="flex gap-3 p-4">
+        {post.fullPicture ? (
+          <img src={post.fullPicture} alt="" className="h-16 w-16 shrink-0 rounded-lg object-cover" />
+        ) : null}
+        <div className="min-w-0 flex-1">
+          <p className="line-clamp-2 text-sm text-foreground">
+            {post.message || post.story || '(No message on this post)'}
+          </p>
+          <div className="mt-3 flex flex-wrap items-center gap-3 text-xs text-muted-foreground">
+            <span>{timeAgo(post.createdTime)}</span>
+            <span className="flex items-center gap-1">
+              <Heart className="h-3.5 w-3.5 text-rose-400" />
+              {post.likeCount}
+            </span>
+            <span className="flex items-center gap-1">
+              <MessageSquare className="h-3.5 w-3.5 text-primary" />
+              {comments.length}
+            </span>
+          </div>
+        </div>
+
+        <div className="flex shrink-0 items-start gap-2">
+          {post.permalinkUrl ? (
+            <a href={post.permalinkUrl} target="_blank" rel="noopener noreferrer">
+              <Button size="icon" variant="ghost">
+                <ExternalLink className="h-4 w-4" />
+              </Button>
+            </a>
+          ) : null}
+          <Button size="icon" variant="ghost" onClick={() => setExpanded((current) => !current)}>
+            {expanded ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+          </Button>
         </div>
       </div>
 
-      {expanded && (
-        <div className="border-t border-border divide-y divide-border">
-          {comments.length === 0 ? (
-            <p className="text-xs text-muted-foreground font-thai px-4 py-3">ยังไม่มี Comment</p>
-          ) : comments.map(c => (
-            <div key={c.id} className="px-4 py-3 space-y-2">
-              <div className="flex items-start gap-2">
-                <div className="w-7 h-7 rounded-full bg-primary/20 flex items-center justify-center shrink-0 text-[10px] font-bold text-primary">
-                  {c.from?.name?.[0] || '?'}
-                </div>
-                <div className="flex-1 min-w-0">
-                  <span className="text-xs font-semibold text-foreground font-thai">{c.from?.name}</span>
-                  <p className="text-xs text-muted-foreground font-thai mt-0.5">{c.message}</p>
-                  <div className="flex items-center gap-3 mt-1">
-                    <span className="text-[10px] text-muted-foreground">{timeAgo(c.created_time)}</span>
-                    {(c.like_count ?? 0) > 0 && (
-                      <span className="text-[10px] text-rose-400 flex items-center gap-0.5">
-                        <Heart className="w-2.5 h-2.5" /> {c.like_count}
-                      </span>
-                    )}
-                    <button
-                      onClick={() => setReplyingTo(replyingTo === c.id ? null : c.id)}
-                      className="text-[10px] text-primary hover:underline font-thai"
-                    >
-                      ตอบกลับ
-                    </button>
-                  </div>
-                </div>
-              </div>
-
-              {replyingTo === c.id && (
-                <div className="flex gap-2 pl-9">
-                  <Textarea
-                    value={replies[c.id] || ''}
-                    onChange={e => setReplies(r => ({ ...r, [c.id]: e.target.value }))}
-                    placeholder={`ตอบกลับ ${c.from?.name}...`}
-                    rows={2}
-                    className="bg-secondary border-border text-xs font-thai resize-none flex-1"
-                  />
-                  <Button
-                    size="sm"
-                    onClick={() => replyMutation.mutate(c.id)}
-                    disabled={!replies[c.id]?.trim() || replyMutation.isPending}
-                    className="bg-gradient-gold text-primary-foreground self-end"
-                  >
-                    <Send className="w-3.5 h-3.5" />
-                  </Button>
-                </div>
-              )}
-            </div>
-          ))}
+      {expanded ? (
+        <div className="space-y-3 border-t border-border/70 bg-background/40 p-4">
+          {comments.length ? comments.map(renderComment) : <PostCommentsEmptyState />}
         </div>
-      )}
+      ) : null}
     </div>
   );
 }
@@ -154,46 +228,44 @@ function PostCard({ post }: { post: Post }) {
 export default function FacebookComments() {
   const { data, isLoading, error, refetch } = useQuery({
     queryKey: ['/api/facebook/feed'],
-    queryFn: () => fetch('/api/facebook/feed').then(r => r.json()),
+    queryFn: () => fetchFacebookAdmin<FacebookFeedData>('/api/facebook/feed'),
   });
 
-  const posts: Post[] = data?.data || [];
+  const posts = data?.posts ?? [];
 
   return (
-    <div className="space-y-4">
-      <div className="flex items-center justify-between">
-        <h2 className="text-xl font-display font-bold text-foreground flex items-center gap-2">
-          <span className="text-2xl">📝</span> โพสต์ & Comments
-        </h2>
+    <div className="space-y-6">
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <div>
+          <h2 className="flex items-center gap-2 text-xl font-bold text-foreground">
+            <span className="text-2xl">Facebook</span> Comments
+          </h2>
+          <p className="text-xs text-muted-foreground">Review recent post comments and reply from one place.</p>
+        </div>
         <Button size="sm" variant="outline" onClick={() => refetch()} className="border-border">
-          <RefreshCw className="w-3.5 h-3.5" />
+          <RefreshCw className="mr-2 h-3.5 w-3.5" />
+          Refresh
         </Button>
       </div>
 
-      {error && (
-        <div className="flex items-center gap-2 text-destructive text-sm font-thai bg-destructive/10 rounded-lg px-4 py-3">
-          <AlertCircle className="w-4 h-4 shrink-0" />
-          ไม่สามารถโหลดโพสต์ได้: ตรวจสอบสิทธิ์ pages_read_engagement
-        </div>
-      )}
+      {error ? <CommentsErrorState error={error} onRetry={() => refetch()} /> : null}
 
       {isLoading ? (
-        <div className="space-y-3">
-          {[...Array(3)].map((_, i) => (
-            <div key={i} className="bg-gradient-card border border-border rounded-xl p-4 animate-pulse">
-              <div className="h-4 w-3/4 bg-secondary rounded mb-2" />
-              <div className="h-3 w-1/2 bg-secondary rounded" />
+        <div className="space-y-4">
+          {[...Array(3)].map((_, index) => (
+            <div key={index} className="rounded-xl border border-border bg-gradient-card p-5 animate-pulse">
+              <div className="mb-3 h-4 w-1/3 rounded bg-secondary" />
+              <div className="h-4 w-3/4 rounded bg-secondary" />
             </div>
           ))}
         </div>
-      ) : posts.length === 0 ? (
-        <div className="flex flex-col items-center justify-center py-16 text-center">
-          <MessageSquare className="w-10 h-10 text-muted-foreground mb-3" />
-          <p className="text-sm text-muted-foreground font-thai">ยังไม่มีโพสต์</p>
-        </div>
+      ) : !error && posts.length === 0 ? (
+        <CommentsEmptyState onRetry={() => refetch()} />
       ) : (
-        <div className="space-y-3">
-          {posts.map(post => <PostCard key={post.id} post={post} />)}
+        <div className="space-y-4">
+          {posts.map((post) => (
+            <PostCard key={post.id} post={post} />
+          ))}
         </div>
       )}
     </div>

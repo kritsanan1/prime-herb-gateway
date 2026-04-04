@@ -2,173 +2,252 @@ import express from 'express';
 import cors from 'cors';
 import path from 'path';
 import { fileURLToPath } from 'url';
+import type { Response } from 'express';
+import { publicRuntimeConfig, serverConfig } from './config';
+import {
+  FACEBOOK_PAGE_ID,
+  FacebookApiError,
+  classifyFacebookError,
+  emptyAdAccounts,
+  emptyCampaigns,
+  emptyConversations,
+  emptyFeed,
+  emptyInsights,
+  emptyMessages,
+  emptyPage,
+  fbGet,
+  fbPost,
+  failureResponse,
+  getFacebookInsights,
+  normalizeFacebookAdAccounts,
+  normalizeFacebookCampaigns,
+  normalizeFacebookConversations,
+  normalizeFacebookFeed,
+  normalizeFacebookMessages,
+  normalizeFacebookPage,
+  successResponse,
+  validationError,
+} from './facebookAdmin';
 
 const app = express();
-const PORT = process.env.API_PORT || 3001;
-const PAGE_ID = process.env.FACEBOOK_PAGE_ID || '1090477170805304';
-const TOKEN = process.env.FACEBOOK_PAGE_ACCESS_TOKEN || '';
-const FB = 'https://graph.facebook.com/v21.0';
+const PORT = serverConfig.apiPort;
 
 app.use(cors());
 app.use(express.json());
 
-async function fbGet(path: string, params: Record<string, string> = {}) {
-  const url = new URL(`${FB}/${path}`);
-  url.searchParams.set('access_token', TOKEN);
-  for (const [k, v] of Object.entries(params)) url.searchParams.set(k, v);
-  const res = await fetch(url.toString());
-  const data = await res.json() as any;
-  if (!res.ok) throw new Error(data.error?.message || `Facebook API error: ${res.status}`);
-  return data;
+function sendFacebookError(
+  res: Response,
+  error: unknown,
+  emptyData: unknown,
+  statusOverride?: number,
+) {
+  const adminError =
+    error instanceof FacebookApiError
+      ? error.adminError
+      : classifyFacebookError(error instanceof Error ? error : new Error(String(error)));
+
+  const statusMap = {
+    validation_error: 400,
+    missing_permission: 403,
+    misconfigured_token: 500,
+    unsupported_metric: 200,
+    upstream_failure: 502,
+  } as const;
+
+  res
+    .status(statusOverride ?? statusMap[adminError.code] ?? 500)
+    .json(failureResponse(adminError, emptyData));
 }
 
-async function fbPost(path: string, body: Record<string, any>) {
-  const res = await fetch(`${FB}/${path}`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ ...body, access_token: TOKEN }),
-  });
-  const data = await res.json() as any;
-  if (!res.ok) throw new Error(data.error?.message || `Facebook API error: ${res.status}`);
-  return data;
+function requireNonEmptyString(value: unknown) {
+  return typeof value === 'string' && value.trim().length > 0;
 }
 
-// ── POST to page ────────────────────────────────────────────────────────────
+app.get('/api/health', (_req, res) => {
+  res.json(
+    successResponse({
+      status: 'ok',
+      environment: serverConfig.nodeEnv,
+      timestamp: new Date().toISOString(),
+    }),
+  );
+});
+
+app.get('/api/config/public', (_req, res) => {
+  res.json(successResponse(publicRuntimeConfig));
+});
+
 app.post('/api/facebook/post', async (req, res) => {
   try {
     const { message, image_url } = req.body;
-    let data;
-    if (image_url) {
-      data = await fbPost(`${PAGE_ID}/photos`, { caption: message, url: image_url });
-    } else {
-      data = await fbPost(`${PAGE_ID}/feed`, { message });
+    if (!requireNonEmptyString(message) && !requireNonEmptyString(image_url)) {
+      return sendFacebookError(
+        res,
+        validationError('A Facebook post requires a message or image URL.'),
+        { id: null, message: 'Facebook post was not created.' },
+      );
     }
-    res.json({ success: true, ...data });
-  } catch (err: any) {
-    res.status(500).json({ error: err.message });
+
+    let data;
+    if (requireNonEmptyString(image_url)) {
+      data = await fbPost(`${FACEBOOK_PAGE_ID}/photos`, { caption: message, url: image_url });
+    } else {
+      data = await fbPost(`${FACEBOOK_PAGE_ID}/feed`, { message });
+    }
+
+    res.json(
+      successResponse({
+        id: data?.id || data?.post_id || null,
+        message: 'Facebook post published successfully.',
+      }),
+    );
+  } catch (error) {
+    sendFacebookError(res, error, { id: null, message: 'Facebook post was not created.' });
   }
 });
 
-// ── PAGE INFO ────────────────────────────────────────────────────────────────
-app.get('/api/facebook/page', async (req, res) => {
+app.get('/api/facebook/page', async (_req, res) => {
   try {
-    const data = await fbGet(PAGE_ID, {
-      fields: 'name,fan_count,picture{url},followers_count,about',
+    const data = await fbGet(FACEBOOK_PAGE_ID, {
+      fields: 'id,name,fan_count,picture{url},followers_count,about',
     });
-    res.json(data);
-  } catch (err: any) {
-    res.status(500).json({ error: err.message });
+    res.json(successResponse(normalizeFacebookPage(data)));
+  } catch (error) {
+    sendFacebookError(res, error, emptyPage());
   }
 });
 
-// ── INSIGHTS ─────────────────────────────────────────────────────────────────
 app.get('/api/facebook/insights', async (req, res) => {
   try {
     const period = (req.query.period as string) || 'day';
-    const metrics = [
-      'page_impressions',
-      'page_impressions_unique',
-      'page_engaged_users',
-      'page_post_engagements',
-      'page_fan_adds',
-      'page_fan_removes',
-    ].join(',');
-    const data = await fbGet(`${PAGE_ID}/insights`, { metric: metrics, period });
-    res.json(data);
-  } catch (err: any) {
-    res.status(500).json({ error: err.message });
+    const response = await getFacebookInsights(period);
+    if (!response.success) {
+      return sendFacebookError(res, response.error, response.data ?? emptyInsights(period));
+    }
+
+    res.json(response);
+  } catch (error) {
+    sendFacebookError(res, error, emptyInsights((req.query.period as string) || 'day'));
   }
 });
 
-// ── FEED (posts + likes + comments) ─────────────────────────────────────────
-app.get('/api/facebook/feed', async (req, res) => {
+app.get('/api/facebook/feed', async (_req, res) => {
   try {
-    const data = await fbGet(`${PAGE_ID}/feed`, {
-      fields: 'id,message,story,created_time,full_picture,permalink_url,likes.summary(true),comments{id,message,from,created_time,like_count}',
+    const data = await fbGet(`${FACEBOOK_PAGE_ID}/feed`, {
+      fields:
+        'id,message,story,created_time,full_picture,permalink_url,likes.summary(true),comments{id,message,from,created_time,like_count}',
       limit: '20',
     });
-    res.json(data);
-  } catch (err: any) {
-    res.status(500).json({ error: err.message });
+    res.json(successResponse(normalizeFacebookFeed(data)));
+  } catch (error) {
+    sendFacebookError(res, error, emptyFeed());
   }
 });
 
-// ── REPLY TO COMMENT ─────────────────────────────────────────────────────────
 app.post('/api/facebook/comments/:id/reply', async (req, res) => {
   try {
     const { message } = req.body;
+    if (!requireNonEmptyString(message)) {
+      return sendFacebookError(
+        res,
+        validationError('A reply message is required before posting to a Facebook comment.'),
+        { id: null, message: 'Facebook comment reply was not sent.' },
+      );
+    }
+
     const data = await fbPost(`${req.params.id}/comments`, { message });
-    res.json({ success: true, ...data });
-  } catch (err: any) {
-    res.status(500).json({ error: err.message });
+    res.json(
+      successResponse({
+        id: data?.id || null,
+        message: 'Facebook comment reply sent successfully.',
+      }),
+    );
+  } catch (error) {
+    sendFacebookError(res, error, { id: null, message: 'Facebook comment reply was not sent.' });
   }
 });
 
-// ── CONVERSATIONS (inbox) ────────────────────────────────────────────────────
-app.get('/api/facebook/conversations', async (req, res) => {
+app.get('/api/facebook/conversations', async (_req, res) => {
   try {
-    const data = await fbGet(`${PAGE_ID}/conversations`, {
+    const data = await fbGet(`${FACEBOOK_PAGE_ID}/conversations`, {
       fields: 'id,snippet,unread_count,updated_time,participants',
       limit: '30',
     });
-    res.json(data);
-  } catch (err: any) {
-    res.status(500).json({ error: err.message });
+    res.json(successResponse(normalizeFacebookConversations(data)));
+  } catch (error) {
+    sendFacebookError(res, error, emptyConversations());
   }
 });
 
-// ── MESSAGES IN CONVERSATION ─────────────────────────────────────────────────
 app.get('/api/facebook/conversations/:id/messages', async (req, res) => {
   try {
     const data = await fbGet(`${req.params.id}/messages`, {
       fields: 'id,message,from,created_time',
       limit: '50',
     });
-    res.json(data);
-  } catch (err: any) {
-    res.status(500).json({ error: err.message });
+    res.json(successResponse(normalizeFacebookMessages(req.params.id, data)));
+  } catch (error) {
+    sendFacebookError(res, error, emptyMessages(req.params.id));
   }
 });
 
-// ── REPLY IN CONVERSATION ────────────────────────────────────────────────────
 app.post('/api/facebook/conversations/:id/reply', async (req, res) => {
   try {
     const { message } = req.body;
+    if (!requireNonEmptyString(message)) {
+      return sendFacebookError(
+        res,
+        validationError('A reply message is required before sending a Facebook inbox response.'),
+        { id: null, message: 'Facebook inbox reply was not sent.' },
+      );
+    }
+
     const data = await fbPost(`${req.params.id}/messages`, { message });
-    res.json({ success: true, ...data });
-  } catch (err: any) {
-    res.status(500).json({ error: err.message });
+    res.json(
+      successResponse({
+        id: data?.message_id || data?.id || null,
+        message: 'Facebook inbox reply sent successfully.',
+      }),
+    );
+  } catch (error) {
+    sendFacebookError(res, error, { id: null, message: 'Facebook inbox reply was not sent.' });
   }
 });
 
-// ── ADS CAMPAIGNS ────────────────────────────────────────────────────────────
-app.get('/api/facebook/ads/accounts', async (req, res) => {
+app.get('/api/facebook/ads/accounts', async (_req, res) => {
   try {
     const data = await fbGet('me/adaccounts', {
       fields: 'id,name,account_status,currency,amount_spent,balance',
     });
-    res.json(data);
-  } catch (err: any) {
-    res.status(500).json({ error: err.message });
+    res.json(successResponse(normalizeFacebookAdAccounts(data)));
+  } catch (error) {
+    sendFacebookError(res, error, emptyAdAccounts());
   }
 });
 
 app.get('/api/facebook/ads/campaigns', async (req, res) => {
+  const accountId = req.query.account_id as string;
   try {
-    const accountId = req.query.account_id as string;
-    if (!accountId) return res.status(400).json({ error: 'account_id required' });
+    if (!requireNonEmptyString(accountId)) {
+      return sendFacebookError(
+        res,
+        validationError('An account_id query parameter is required to load Facebook ad campaigns.'),
+        emptyCampaigns(accountId || ''),
+      );
+    }
+
     const data = await fbGet(`${accountId}/campaigns`, {
-      fields: 'id,name,status,objective,daily_budget,lifetime_budget,start_time,stop_time,insights{impressions,clicks,spend,reach}',
+      fields:
+        'id,name,status,objective,daily_budget,lifetime_budget,start_time,stop_time,insights{impressions,clicks,spend,reach}',
       limit: '20',
     });
-    res.json(data);
-  } catch (err: any) {
-    res.status(500).json({ error: err.message });
+    res.json(successResponse(normalizeFacebookCampaigns(accountId, data)));
+  } catch (error) {
+    sendFacebookError(res, error, emptyCampaigns(accountId || ''));
   }
 });
 
-// ── SERVE STATIC IN PRODUCTION ───────────────────────────────────────────────
-if (process.env.NODE_ENV === 'production') {
+if (serverConfig.nodeEnv === 'production') {
   const __dirname = path.dirname(fileURLToPath(import.meta.url));
   app.use(express.static(path.join(__dirname, '../dist')));
   app.get('*', (_req, res) => {

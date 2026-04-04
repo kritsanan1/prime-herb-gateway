@@ -4,57 +4,71 @@ import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGri
 import { Users, Eye, Heart, TrendingUp, TrendingDown, RefreshCw, AlertCircle, ExternalLink } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import {
+  FacebookAdminApiError,
+  FacebookInsightsData,
+  FacebookPageData,
+  fetchFacebookAdmin,
+  getFacebookAdminErrorMessage,
+} from '@/lib/facebookAdmin';
 
-interface InsightValue {
-  end_time: string;
-  value: number;
-}
-interface InsightMetric {
-  name: string;
-  period: string;
-  values: InsightValue[];
-  title: string;
+function InsightsErrorState({ error, onRetry }: { error: unknown; onRetry: () => void }) {
+  const message = getFacebookAdminErrorMessage(error);
+  const typedError = error instanceof FacebookAdminApiError ? error : null;
+
+  return (
+    <Alert className="border-destructive/30 bg-destructive/10">
+      <AlertCircle className="h-4 w-4 text-destructive" />
+      <AlertDescription className="flex items-center justify-between gap-4 text-sm font-thai text-destructive">
+        <div className="space-y-1">
+          <p>{message}</p>
+          {typedError?.details && (
+            <p className="text-xs text-destructive/80">
+              {JSON.stringify(typedError.details)}
+            </p>
+          )}
+        </div>
+        <Button size="sm" variant="outline" onClick={onRetry} className="border-destructive/40">
+          ลองใหม่
+        </Button>
+      </AlertDescription>
+    </Alert>
+  );
 }
 
-function metricTotal(metrics: InsightMetric[], name: string): number {
-  const m = metrics.find(x => x.name === name);
-  if (!m) return 0;
-  return m.values.reduce((s, v) => s + (v.value || 0), 0);
-}
-
-function metricSeries(metrics: InsightMetric[], name: string) {
-  const m = metrics.find(x => x.name === name);
-  if (!m) return [];
-  return m.values.map(v => ({
-    date: new Date(v.end_time).toLocaleDateString('th-TH', { day: 'numeric', month: 'short' }),
-    value: v.value || 0,
-  }));
+function InsightsEmptyState({ onRetry }: { onRetry: () => void }) {
+  return (
+    <div className="rounded-xl border border-border bg-gradient-card p-8 text-center">
+      <Eye className="mx-auto mb-3 h-10 w-10 text-muted-foreground" />
+      <p className="text-sm font-thai text-muted-foreground">ยังไม่มีข้อมูล Insights สำหรับช่วงเวลานี้</p>
+      <Button size="sm" variant="outline" onClick={onRetry} className="mt-4 border-border">
+        <RefreshCw className="mr-2 h-3.5 w-3.5" />
+        โหลดอีกครั้ง
+      </Button>
+    </div>
+  );
 }
 
 export default function FacebookInsights() {
   const [period, setPeriod] = useState<'day' | 'week' | 'days_28'>('day');
 
-  const { data: pageData } = useQuery({
+  const {
+    data: page,
+  } = useQuery({
     queryKey: ['/api/facebook/page'],
+    queryFn: () => fetchFacebookAdmin<FacebookPageData>('/api/facebook/page'),
   });
 
-  const { data: insightsData, isLoading, error, refetch } = useQuery({
+  const {
+    data: insights,
+    isLoading,
+    error,
+    refetch,
+  } = useQuery({
     queryKey: ['/api/facebook/insights', period],
-    queryFn: () => fetch(`/api/facebook/insights?period=${period}`).then(r => r.json()),
+    queryFn: () => fetchFacebookAdmin<FacebookInsightsData>(`/api/facebook/insights?period=${period}`),
   });
-
-  const page = pageData as any;
-  const metrics: InsightMetric[] = insightsData?.data || [];
-
-  const impressions = metricTotal(metrics, 'page_impressions');
-  const reach = metricTotal(metrics, 'page_impressions_unique');
-  const engaged = metricTotal(metrics, 'page_engaged_users');
-  const engagement = metricTotal(metrics, 'page_post_engagements');
-  const fanAdds = metricTotal(metrics, 'page_fan_adds');
-  const fanRemoves = metricTotal(metrics, 'page_fan_removes');
-
-  const reachSeries = metricSeries(metrics, 'page_impressions_unique');
-  const engagedSeries = metricSeries(metrics, 'page_engaged_users');
 
   const PERIOD_LABELS: Record<string, string> = {
     day: 'รายวัน',
@@ -62,57 +76,68 @@ export default function FacebookInsights() {
     days_28: '28 วัน',
   };
 
-  const stats = [
-    { label: 'Impressions', value: impressions.toLocaleString(), icon: Eye, color: 'text-blue-400' },
-    { label: 'Reach (Unique)', value: reach.toLocaleString(), icon: Users, color: 'text-primary' },
-    { label: 'Engaged Users', value: engaged.toLocaleString(), icon: Heart, color: 'text-rose-400' },
-    { label: 'Post Engagements', value: engagement.toLocaleString(), icon: TrendingUp, color: 'text-emerald-400' },
-  ];
+  const stats = insights ? [
+    { label: 'Page Views', value: insights.summary.pageViews.toLocaleString(), icon: Eye, color: 'text-blue-400' },
+    { label: 'Post Engagements', value: insights.summary.postEngagements.toLocaleString(), icon: Heart, color: 'text-rose-400' },
+    { label: 'New Followers', value: insights.summary.newFollowers.toLocaleString(), icon: TrendingUp, color: 'text-emerald-400' },
+    { label: 'Unfollows', value: insights.summary.unfollows.toLocaleString(), icon: TrendingDown, color: 'text-amber-400' },
+  ] : [];
+
+  const hasSeriesData = (insights?.series ?? []).some(
+    (point) => point.pageViews > 0 || point.postEngagements > 0 || point.newFollowers > 0 || point.unfollows > 0,
+  );
 
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between flex-wrap gap-3">
         <div>
           <h2 className="text-xl font-display font-bold text-foreground flex items-center gap-2">
-            <span className="text-2xl">📘</span> Facebook Insights
+            <span className="text-2xl">Facebook</span> Facebook Insights
           </h2>
           {page && (
             <p className="text-xs text-muted-foreground font-thai mt-0.5">
-              {page.name} · {Number(page.fan_count || 0).toLocaleString()} ผู้ติดตาม
+              {page.name} · {page.fanCount.toLocaleString()} ผู้ติดตาม
             </p>
           )}
         </div>
         <div className="flex items-center gap-2">
-          <Select value={period} onValueChange={v => setPeriod(v as any)}>
+          <Select value={period} onValueChange={(value) => setPeriod(value as typeof period)}>
             <SelectTrigger className="w-36 bg-secondary border-border text-xs font-thai">
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
-              {Object.entries(PERIOD_LABELS).map(([v, l]) => (
-                <SelectItem key={v} value={v} className="font-thai text-xs">{l}</SelectItem>
+              {Object.entries(PERIOD_LABELS).map(([value, label]) => (
+                <SelectItem key={value} value={value} className="font-thai text-xs">
+                  {label}
+                </SelectItem>
               ))}
             </SelectContent>
           </Select>
           <Button size="sm" variant="outline" onClick={() => refetch()} className="border-border">
             <RefreshCw className="w-3.5 h-3.5" />
           </Button>
-          <a
-            href={`https://www.facebook.com/profile.php?id=${import.meta.env.VITE_FACEBOOK_PAGE_ID || '1090477170805304'}`}
-            target="_blank" rel="noopener noreferrer"
-          >
-            <Button size="sm" variant="outline" className="border-border text-xs font-thai gap-1">
-              <ExternalLink className="w-3.5 h-3.5" /> ดูเพจ
-            </Button>
-          </a>
+          {page?.pageUrl && (
+            <a href={page.pageUrl} target="_blank" rel="noopener noreferrer">
+              <Button size="sm" variant="outline" className="border-border text-xs font-thai gap-1">
+                <ExternalLink className="w-3.5 h-3.5" /> ดูเพจ
+              </Button>
+            </a>
+          )}
         </div>
       </div>
 
-      {error && (
-        <div className="flex items-center gap-2 text-destructive text-sm font-thai bg-destructive/10 rounded-lg px-4 py-3">
-          <AlertCircle className="w-4 h-4 shrink-0" />
-          <span>ไม่สามารถโหลด Insights ได้: {(error as any).message || 'ตรวจสอบ Token และสิทธิ์ read_insights'}</span>
-        </div>
-      )}
+      {error && <InsightsErrorState error={error} onRetry={() => refetch()} />}
+
+      {insights?.unavailableMetrics.length ? (
+        <Alert className="border-amber-500/30 bg-amber-500/10">
+          <AlertCircle className="h-4 w-4 text-amber-400" />
+          <AlertDescription className="text-sm font-thai text-amber-200">
+            Metrics บางตัวไม่พร้อมใช้งานใน Graph API เวอร์ชันนี้:
+            {' '}
+            {insights.unavailableMetrics.join(', ')}
+          </AlertDescription>
+        </Alert>
+      ) : null}
 
       {isLoading ? (
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
@@ -123,14 +148,16 @@ export default function FacebookInsights() {
             </div>
           ))}
         </div>
-      ) : (
+      ) : !error && insights && !hasSeriesData ? (
+        <InsightsEmptyState onRetry={() => refetch()} />
+      ) : !error && insights ? (
         <>
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-            {stats.map(s => (
-              <div key={s.label} className="bg-gradient-card border border-border rounded-xl p-5">
-                <s.icon className={`w-5 h-5 mb-2 ${s.color}`} />
-                <p className="text-xs text-muted-foreground font-thai mb-1">{s.label}</p>
-                <p className="text-2xl font-bold text-foreground">{s.value}</p>
+            {stats.map((stat) => (
+              <div key={stat.label} className="bg-gradient-card border border-border rounded-xl p-5">
+                <stat.icon className={`w-5 h-5 mb-2 ${stat.color}`} />
+                <p className="text-xs text-muted-foreground font-thai mb-1">{stat.label}</p>
+                <p className="text-2xl font-bold text-foreground">{stat.value}</p>
               </div>
             ))}
           </div>
@@ -138,22 +165,22 @@ export default function FacebookInsights() {
           <div className="grid grid-cols-2 gap-4">
             <div className="bg-gradient-card border border-border rounded-xl p-5 col-span-2 sm:col-span-1">
               <p className="text-sm font-semibold text-foreground mb-1 font-thai flex items-center gap-1.5">
-                <TrendingUp className="w-4 h-4 text-primary" /> Reach รายวัน
+                <Users className="w-4 h-4 text-primary" /> Page Views รายวัน
               </p>
               <div className="flex items-center gap-4 mb-4">
                 <div className="flex items-center gap-1 text-xs text-emerald-400 font-thai">
                   <TrendingUp className="w-3 h-3" />
-                  +{fanAdds} ผู้ติดตามใหม่
+                  +{insights.summary.newFollowers.toLocaleString()} ผู้ติดตามใหม่
                 </div>
-                {fanRemoves > 0 && (
+                {insights.summary.unfollows > 0 && (
                   <div className="flex items-center gap-1 text-xs text-destructive font-thai">
                     <TrendingDown className="w-3 h-3" />
-                    -{fanRemoves} ยกเลิกติดตาม
+                    -{insights.summary.unfollows.toLocaleString()} ยกเลิกติดตาม
                   </div>
                 )}
               </div>
               <ResponsiveContainer width="100%" height={180}>
-                <BarChart data={reachSeries}>
+                <BarChart data={insights.series}>
                   <CartesianGrid strokeDasharray="3 3" stroke="#333" />
                   <XAxis dataKey="date" tick={{ fontSize: 10, fill: '#888' }} />
                   <YAxis tick={{ fontSize: 10, fill: '#888' }} width={40} />
@@ -162,17 +189,17 @@ export default function FacebookInsights() {
                     labelStyle={{ color: '#fff', fontSize: 11 }}
                     itemStyle={{ color: '#D4AF37', fontSize: 11 }}
                   />
-                  <Bar dataKey="value" fill="#D4AF37" radius={[3, 3, 0, 0]} name="Reach" />
+                  <Bar dataKey="pageViews" fill="#D4AF37" radius={[3, 3, 0, 0]} name="Page Views" />
                 </BarChart>
               </ResponsiveContainer>
             </div>
 
             <div className="bg-gradient-card border border-border rounded-xl p-5 col-span-2 sm:col-span-1">
               <p className="text-sm font-semibold text-foreground mb-5 font-thai flex items-center gap-1.5">
-                <Heart className="w-4 h-4 text-rose-400" /> Engaged Users รายวัน
+                <Heart className="w-4 h-4 text-rose-400" /> Post Engagements รายวัน
               </p>
               <ResponsiveContainer width="100%" height={180}>
-                <BarChart data={engagedSeries}>
+                <BarChart data={insights.series}>
                   <CartesianGrid strokeDasharray="3 3" stroke="#333" />
                   <XAxis dataKey="date" tick={{ fontSize: 10, fill: '#888' }} />
                   <YAxis tick={{ fontSize: 10, fill: '#888' }} width={40} />
@@ -181,13 +208,13 @@ export default function FacebookInsights() {
                     labelStyle={{ color: '#fff', fontSize: 11 }}
                     itemStyle={{ color: '#f87171', fontSize: 11 }}
                   />
-                  <Bar dataKey="value" fill="#f87171" radius={[3, 3, 0, 0]} name="Engaged" />
+                  <Bar dataKey="postEngagements" fill="#f87171" radius={[3, 3, 0, 0]} name="Post Engagements" />
                 </BarChart>
               </ResponsiveContainer>
             </div>
           </div>
         </>
-      )}
+      ) : null}
     </div>
   );
 }
