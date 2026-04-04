@@ -17,6 +17,8 @@ build = ["npm", "run", "build"]
 VITE_SUPABASE_URL = "https://usnsfvnykgivhzedzmxj.supabase.co"
 VITE_SUPABASE_PUBLISHABLE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVzbnNmdm55a2dpdmh6ZWR6bXhqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzM5OTMwMTQsImV4cCI6MjA4OTU2OTAxNH0.-mOmPYJ6h0bTuLRwCbicb145PacwsNfZ-l4-YFO2qUU"
 VITE_SUPABASE_PROJECT_ID = "usnsfvnykgivhzedzmxj"
+FACEBOOK_PAGE_ID = "1090477170805304"
+API_PORT = "3001"
 
 [workflows]
 runButton = "Project"
@@ -41,6 +43,10 @@ waitForPort = 5000
 
 [workflows.workflow.metadata]
 outputType = "webview"
+
+[[ports]]
+localPort = 3001
+externalPort = 3001
 
 [[ports]]
 localPort = 5000
