@@ -167,6 +167,7 @@ export default function AdminPage() {
     { id: 'coupons', label: 'คูปอง', icon: Tag },
     { id: 'customers', label: 'ลูกค้า', icon: Users },
     { id: 'articles', label: 'บทความ', icon: FileText },
+    { id: 'calendar', label: 'Content Calendar', icon: CalendarDays },
   ];
 
   return (
