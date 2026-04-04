@@ -8,7 +8,20 @@ import { OrderProvider } from "@/contexts/OrderContext";
 import { AuthProvider } from "@/contexts/AuthContext";
 import AppRoutes from "./AppRoutes";
 
-const queryClient = new QueryClient();
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      queryFn: async ({ queryKey }) => {
+        const url = Array.isArray(queryKey) ? (queryKey[0] as string) : (queryKey as string);
+        const res = await fetch(url);
+        if (!res.ok) throw new Error(`${res.status} ${res.statusText}`);
+        return res.json();
+      },
+      retry: 1,
+      staleTime: 30_000,
+    },
+  },
+});
 
 const App = () => (
   <QueryClientProvider client={queryClient}>
