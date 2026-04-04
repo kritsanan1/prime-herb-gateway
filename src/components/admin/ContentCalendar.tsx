@@ -96,6 +96,7 @@ export default function ContentCalendar() {
     setSaving(true);
     const payload = {
       ...form,
+      status: form.status as 'draft' | 'pending_approval' | 'approved' | 'published' | 'rejected',
       scheduled_at: form.scheduled_at ? new Date(form.scheduled_at).toISOString() : null,
     };
 
@@ -103,7 +104,7 @@ export default function ContentCalendar() {
       const { error } = await supabase.from('content_calendar').update(payload).eq('id', editing.id);
       if (error) toast.error(error.message); else toast.success('อัปเดตสำเร็จ');
     } else {
-      const { error } = await supabase.from('content_calendar').insert(payload);
+      const { error } = await supabase.from('content_calendar').insert([payload]);
       if (error) toast.error(error.message); else toast.success('เพิ่มโพสต์สำเร็จ');
     }
     setSaving(false);
