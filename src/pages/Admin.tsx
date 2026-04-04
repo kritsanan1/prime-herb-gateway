@@ -485,6 +485,8 @@ export default function AdminPage() {
           )}
 
           {tab === 'articles' && <ArticleManager />}
+
+          {tab === 'calendar' && <ContentCalendar />}
         </main>
       </div>
     </div>
