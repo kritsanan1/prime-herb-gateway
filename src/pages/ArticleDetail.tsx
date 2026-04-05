@@ -109,6 +109,15 @@ export default function ArticleDetail() {
 
   return (
     <div className="min-h-screen flex flex-col">
+      <ArticleSEO
+        title={article.title}
+        excerpt={article.excerpt}
+        image={article.image}
+        slug={article.slug}
+        category={article.category}
+        publishedAt={article.published_at}
+        readTime={article.read_time}
+      />
       <Header />
       <CartDrawer />
 

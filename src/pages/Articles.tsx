@@ -26,6 +26,20 @@ export default function Articles() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    document.title = 'บทความ Dr.Arty Talk | Dr. Arty Prime Herb Intimate Care';
+    const setMeta = (attr: string, key: string, content: string) => {
+      let el = document.querySelector(`meta[${attr}="${key}"]`) as HTMLMetaElement | null;
+      if (!el) { el = document.createElement('meta'); el.setAttribute(attr, key); document.head.appendChild(el); }
+      el.setAttribute('content', content);
+    };
+    setMeta('name', 'description', 'บทความและเนื้อหาสำหรับผู้ชายยุคใหม่ที่ใส่ใจในการดูแลตัวเอง โดย Dr.Arty Talk');
+    setMeta('property', 'og:title', 'บทความ Dr.Arty Talk');
+    setMeta('property', 'og:description', 'บทความและเนื้อหาสำหรับผู้ชายยุคใหม่ที่ใส่ใจในการดูแลตัวเอง');
+    setMeta('property', 'og:type', 'website');
+    return () => { document.title = 'Dr. Arty Prime Herb Intimate Care | เว็บไซต์อย่างเป็นทางการ'; };
+  }, []);
+
+  useEffect(() => {
     const fetch = async () => {
       const { data } = await supabase
         .from('articles')
