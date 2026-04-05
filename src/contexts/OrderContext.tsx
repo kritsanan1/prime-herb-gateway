@@ -99,27 +99,21 @@ export const OrderProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     discount: number,
   ): Promise<Order> => {
     const orderNumber = generateOrderNumber();
-    const total = subtotal + shipping - discount;
 
-    const { data, error } = await supabase.from('orders').insert({
-      order_number: orderNumber,
-      items: items as any,
-      customer_name: customer.name,
-      customer_phone: customer.phone,
-      customer_email: customer.email,
-      customer_address: customer.address,
-      province: customer.province,
-      postal_code: customer.postalCode,
-      note: customer.note,
-      coupon_code: customer.couponCode,
-      subtotal,
-      shipping,
-      discount,
-      total,
-      status: 'pending' as any,
-      payment_method: paymentMethod as any,
-      payment_status: 'pending' as any,
-    }).select().single();
+    // Use server-side RPC for secure order creation with price validation
+    const { data, error } = await supabase.rpc('create_order_secure', {
+      _items: items as any,
+      _customer_name: customer.name,
+      _customer_phone: customer.phone,
+      _customer_email: customer.email,
+      _customer_address: customer.address || '',
+      _province: customer.province || '',
+      _postal_code: customer.postalCode || '',
+      _note: customer.note || '',
+      _coupon_code: customer.couponCode || '',
+      _payment_method: paymentMethod,
+      _order_number: orderNumber,
+    });
 
     if (error) throw error;
 
