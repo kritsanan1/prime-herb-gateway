@@ -1,9 +1,10 @@
 import { lazy, Suspense } from 'react';
 import { Routes, Route } from 'react-router-dom';
 import { Loader2 } from 'lucide-react';
+import Index from './pages/Index';
+import NotFound from './pages/NotFound';
 
-// Lazy load pages to reduce initial bundle size
-const Index = lazy(() => import('./pages/Index'));
+// Eager-load the home and fallback pages to avoid blank screens from failed dynamic imports
 const Checkout = lazy(() => import('./pages/Checkout'));
 const OrderSuccess = lazy(() => import('./pages/OrderSuccess'));
 const OrderTracking = lazy(() => import('./pages/OrderTracking'));
@@ -13,7 +14,6 @@ const Terms = lazy(() => import('./pages/Terms'));
 const BrandStory = lazy(() => import('./pages/BrandStory'));
 const Articles = lazy(() => import('./pages/Articles'));
 const ArticleDetail = lazy(() => import('./pages/ArticleDetail'));
-const NotFound = lazy(() => import('./pages/NotFound'));
 
 const LoadingFallback = () => (
   <div className="flex items-center justify-center min-h-screen">
