@@ -310,6 +310,82 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      create_order_secure: {
+        Args: {
+          _coupon_code?: string
+          _customer_address?: string
+          _customer_email: string
+          _customer_name: string
+          _customer_phone: string
+          _items: Json
+          _note?: string
+          _order_number?: string
+          _payment_method?: Database["public"]["Enums"]["payment_method"]
+          _postal_code?: string
+          _province?: string
+        }
+        Returns: {
+          coupon_code: string | null
+          created_at: string
+          customer_address: string
+          customer_email: string
+          customer_name: string
+          customer_phone: string
+          discount: number
+          id: string
+          items: Json
+          note: string | null
+          order_number: string
+          payment_method: Database["public"]["Enums"]["payment_method"]
+          payment_status: Database["public"]["Enums"]["payment_status"]
+          postal_code: string
+          province: string
+          shipping: number
+          status: Database["public"]["Enums"]["order_status"]
+          subtotal: number
+          total: number
+          tracking_number: string | null
+          updated_at: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "orders"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
+      find_order_by_number_and_contact: {
+        Args: { _contact: string; _order_number: string }
+        Returns: {
+          coupon_code: string | null
+          created_at: string
+          customer_address: string
+          customer_email: string
+          customer_name: string
+          customer_phone: string
+          discount: number
+          id: string
+          items: Json
+          note: string | null
+          order_number: string
+          payment_method: Database["public"]["Enums"]["payment_method"]
+          payment_status: Database["public"]["Enums"]["payment_status"]
+          postal_code: string
+          province: string
+          shipping: number
+          status: Database["public"]["Enums"]["order_status"]
+          subtotal: number
+          total: number
+          tracking_number: string | null
+          updated_at: string
+        }[]
+        SetofOptions: {
+          from: "*"
+          to: "orders"
+          isOneToOne: false
+          isSetofReturn: true
+        }
+      }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
