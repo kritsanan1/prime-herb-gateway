@@ -10,6 +10,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { supabase } from '@/integrations/supabase/client';
+import ArticleSEO from '@/components/ArticleSEO';
 
 interface DBArticle {
   id: string;
@@ -108,6 +109,15 @@ export default function ArticleDetail() {
 
   return (
     <div className="min-h-screen flex flex-col">
+      <ArticleSEO
+        title={article.title}
+        excerpt={article.excerpt}
+        image={article.image}
+        slug={article.slug}
+        category={article.category}
+        publishedAt={article.published_at}
+        readTime={article.read_time}
+      />
       <Header />
       <CartDrawer />
 
