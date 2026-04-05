@@ -139,13 +139,13 @@ export const OrderProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   }, [orders]);
 
   const findOrder = useCallback(async (orderNumber: string, contact: string): Promise<Order | undefined> => {
-    const { data } = await supabase
-      .from('orders')
-      .select('*')
-      .ilike('order_number', orderNumber)
-      .or(`customer_phone.eq.${contact},customer_email.ilike.${contact}`)
-      .maybeSingle();
-    return data ? dbRowToOrder(data) : undefined;
+    // Use secure RPC with parameterized query (prevents filter injection)
+    const { data } = await supabase.rpc('find_order_by_number_and_contact', {
+      _order_number: orderNumber,
+      _contact: contact,
+    });
+    const row = Array.isArray(data) ? data[0] : data;
+    return row ? dbRowToOrder(row) : undefined;
   }, []);
 
   const updateOrderStatus = useCallback(async (orderId: string, status: OrderStatus) => {
