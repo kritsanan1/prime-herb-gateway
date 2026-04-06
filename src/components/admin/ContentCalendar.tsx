@@ -7,8 +7,13 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Badge } from '@/components/ui/badge';
-import { Plus, Pencil, Trash2, Loader2, Send, Calendar } from 'lucide-react';
+import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
+import { Plus, Pencil, Trash2, Loader2, Send, Calendar, LayoutGrid, List, FileText } from 'lucide-react';
 import { toast } from 'sonner';
+import ContentKanban from './ContentKanban';
+import ContentMonthCalendar from './ContentMonthCalendar';
+import SocialImageUpload from './SocialImageUpload';
+import ContentTemplates, { type ContentTemplate } from './ContentTemplates';
 
 interface ContentItem {
   id: string;
@@ -61,6 +66,7 @@ export default function ContentCalendar() {
   const [saving, setSaving] = useState(false);
   const [sendingApproval, setSendingApproval] = useState<string | null>(null);
   const [deleteId, setDeleteId] = useState<string | null>(null);
+  const [showTemplates, setShowTemplates] = useState(false);
 
   const fetchItems = async () => {
     setLoading(true);
@@ -74,7 +80,15 @@ export default function ContentCalendar() {
 
   useEffect(() => { fetchItems(); }, []);
 
-  const openNew = () => { setEditing(null); setForm(EMPTY); setDialogOpen(true); };
+  const openNew = (presetDate?: Date) => {
+    setEditing(null);
+    setForm({
+      ...EMPTY,
+      scheduled_at: presetDate ? presetDate.toISOString().slice(0, 16) : '',
+    });
+    setShowTemplates(false);
+    setDialogOpen(true);
+  };
 
   const openEdit = (item: ContentItem) => {
     setEditing(item);
@@ -88,7 +102,13 @@ export default function ContentCalendar() {
       author: item.author,
       notes: item.notes || '',
     });
+    setShowTemplates(false);
     setDialogOpen(true);
+  };
+
+  const applyTemplate = (t: ContentTemplate) => {
+    setForm(f => ({ ...f, caption: t.caption, hashtags: t.hashtags }));
+    setShowTemplates(false);
   };
 
   const handleSave = async () => {
@@ -138,7 +158,6 @@ export default function ContentCalendar() {
           },
         },
       });
-
       if (error) throw error;
       if (data?.success) {
         await supabase.from('content_calendar').update({ status: 'pending_approval', approval_sent_at: new Date().toISOString() }).eq('id', item.id);
@@ -156,12 +175,12 @@ export default function ContentCalendar() {
   const getPlatformEmoji = (p: string) => PLATFORMS.find(pl => pl.value === p)?.emoji || '📱';
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
       <div className="flex items-center justify-between">
         <h2 className="text-2xl font-display font-bold text-foreground flex items-center gap-2">
           <Calendar className="w-6 h-6 text-primary" /> Content Calendar ({items.length})
         </h2>
-        <Button onClick={openNew} className="bg-gradient-gold text-primary-foreground font-thai">
+        <Button onClick={() => openNew()} className="bg-gradient-gold text-primary-foreground font-thai">
           <Plus className="w-4 h-4 mr-1" /> เพิ่มโพสต์
         </Button>
       </div>
@@ -172,59 +191,79 @@ export default function ContentCalendar() {
         <div className="text-center py-12 bg-gradient-card border border-border rounded-xl">
           <Calendar className="w-10 h-10 text-muted-foreground/40 mx-auto mb-3" />
           <p className="text-muted-foreground font-thai text-sm">ยังไม่มีโพสต์ใน Content Calendar</p>
-          <Button onClick={openNew} variant="outline" className="mt-4 font-thai border-border text-xs">
+          <Button onClick={() => openNew()} variant="outline" className="mt-4 font-thai border-border text-xs">
             <Plus className="w-3 h-3 mr-1" /> เพิ่มโพสต์แรก
           </Button>
         </div>
       ) : (
-        <div className="grid gap-3">
-          {items.map(item => {
-            const st = STATUS_MAP[item.status] || STATUS_MAP.draft;
-            return (
-              <div key={item.id} className="bg-gradient-card border border-border rounded-lg p-4">
-                <div className="flex items-start gap-3">
-                  <span className="text-2xl">{getPlatformEmoji(item.platform)}</span>
-                  <div className="flex-1 min-w-0">
-                    <p className="font-thai text-sm text-foreground line-clamp-2">{item.caption || 'ไม่มี caption'}</p>
-                    <div className="flex flex-wrap items-center gap-2 mt-2">
-                      <Badge variant="outline" className="text-[10px] font-thai">{item.platform}</Badge>
-                      <Badge className={`text-[10px] font-thai ${st.color} border-0`}>{st.label}</Badge>
-                      {item.scheduled_at && (
-                        <span className="text-[10px] text-muted-foreground font-thai">
-                          📅 {new Date(item.scheduled_at).toLocaleString('th-TH', { dateStyle: 'short', timeStyle: 'short' })}
-                        </span>
+        <Tabs defaultValue="list" className="w-full">
+          <TabsList className="mb-3">
+            <TabsTrigger value="list" className="font-thai text-xs gap-1"><List className="w-3 h-3" /> รายการ</TabsTrigger>
+            <TabsTrigger value="kanban" className="font-thai text-xs gap-1"><LayoutGrid className="w-3 h-3" /> Kanban</TabsTrigger>
+            <TabsTrigger value="calendar" className="font-thai text-xs gap-1"><Calendar className="w-3 h-3" /> ปฏิทิน</TabsTrigger>
+          </TabsList>
+
+          <TabsContent value="list">
+            <div className="grid gap-3">
+              {items.map(item => {
+                const st = STATUS_MAP[item.status] || STATUS_MAP.draft;
+                return (
+                  <div key={item.id} className="bg-gradient-card border border-border rounded-lg p-4">
+                    <div className="flex items-start gap-3">
+                      {item.image_url ? (
+                        <img src={item.image_url} alt="" className="w-12 h-12 rounded-lg object-cover shrink-0" />
+                      ) : (
+                        <span className="text-2xl">{getPlatformEmoji(item.platform)}</span>
                       )}
-                      <span className="text-[10px] text-muted-foreground font-thai">โดย {item.author}</span>
+                      <div className="flex-1 min-w-0">
+                        <p className="font-thai text-sm text-foreground line-clamp-2">{item.caption || 'ไม่มี caption'}</p>
+                        <div className="flex flex-wrap items-center gap-2 mt-2">
+                          <Badge variant="outline" className="text-[10px] font-thai">{item.platform}</Badge>
+                          <Badge className={`text-[10px] font-thai ${st.color} border-0`}>{st.label}</Badge>
+                          {item.scheduled_at && (
+                            <span className="text-[10px] text-muted-foreground font-thai">
+                              📅 {new Date(item.scheduled_at).toLocaleString('th-TH', { dateStyle: 'short', timeStyle: 'short' })}
+                            </span>
+                          )}
+                          <span className="text-[10px] text-muted-foreground font-thai">โดย {item.author}</span>
+                        </div>
+                        {item.hashtags && <p className="text-[10px] text-primary/70 mt-1 truncate">{item.hashtags}</p>}
+                      </div>
+                      <div className="flex items-center gap-1 shrink-0">
+                        {item.status === 'draft' && (
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => sendApproval(item)}
+                            disabled={sendingApproval === item.id}
+                            className="text-[10px] font-thai border-primary/30 text-primary h-7 px-2"
+                          >
+                            {sendingApproval === item.id ? <Loader2 className="w-3 h-3 animate-spin" /> : <Send className="w-3 h-3 mr-1" />}
+                            ส่งอนุมัติ
+                          </Button>
+                        )}
+                        <Button size="icon" variant="ghost" onClick={() => openEdit(item)} className="h-7 w-7">
+                          <Pencil className="w-3 h-3" />
+                        </Button>
+                        <Button size="icon" variant="ghost" onClick={() => setDeleteId(item.id)} className="h-7 w-7 text-destructive hover:text-destructive">
+                          <Trash2 className="w-3 h-3" />
+                        </Button>
+                      </div>
                     </div>
-                    {item.hashtags && (
-                      <p className="text-[10px] text-primary/70 mt-1 truncate">{item.hashtags}</p>
-                    )}
                   </div>
-                  <div className="flex items-center gap-1 shrink-0">
-                    {item.status === 'draft' && (
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        onClick={() => sendApproval(item)}
-                        disabled={sendingApproval === item.id}
-                        className="text-[10px] font-thai border-primary/30 text-primary h-7 px-2"
-                      >
-                        {sendingApproval === item.id ? <Loader2 className="w-3 h-3 animate-spin" /> : <Send className="w-3 h-3 mr-1" />}
-                        ส่งอนุมัติ
-                      </Button>
-                    )}
-                    <Button size="icon" variant="ghost" onClick={() => openEdit(item)} className="h-7 w-7">
-                      <Pencil className="w-3 h-3" />
-                    </Button>
-                    <Button size="icon" variant="ghost" onClick={() => setDeleteId(item.id)} className="h-7 w-7 text-destructive hover:text-destructive">
-                      <Trash2 className="w-3 h-3" />
-                    </Button>
-                  </div>
-                </div>
-              </div>
-            );
-          })}
-        </div>
+                );
+              })}
+            </div>
+          </TabsContent>
+
+          <TabsContent value="kanban">
+            <ContentKanban items={items} onEdit={openEdit} onDelete={id => setDeleteId(id)} onRefresh={fetchItems} />
+          </TabsContent>
+
+          <TabsContent value="calendar">
+            <ContentMonthCalendar items={items} onEdit={openEdit} onNewOnDate={d => openNew(d)} />
+          </TabsContent>
+        </Tabs>
       )}
 
       {/* Create/Edit Dialog */}
@@ -234,6 +273,26 @@ export default function ContentCalendar() {
             <DialogTitle className="font-display">{editing ? 'แก้ไขโพสต์' : 'เพิ่มโพสต์ใหม่'}</DialogTitle>
           </DialogHeader>
           <div className="space-y-4">
+            {/* Template picker */}
+            {!editing && (
+              <div>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setShowTemplates(!showTemplates)}
+                  className="font-thai text-xs border-border gap-1"
+                >
+                  <FileText className="w-3 h-3" /> {showTemplates ? 'ซ่อน Template' : 'เลือก Template'}
+                </Button>
+                {showTemplates && (
+                  <div className="mt-2">
+                    <ContentTemplates onSelect={applyTemplate} />
+                  </div>
+                )}
+              </div>
+            )}
+
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <Label className="font-thai text-xs">แพลตฟอร์ม</Label>
@@ -263,8 +322,8 @@ export default function ContentCalendar() {
               <Input value={form.hashtags} onChange={e => setForm(f => ({ ...f, hashtags: e.target.value }))} placeholder="#DrArty #PrimeHerb" className="bg-secondary border-border text-xs" />
             </div>
             <div>
-              <Label className="font-thai text-xs">รูปภาพ (URL)</Label>
-              <Input value={form.image_url} onChange={e => setForm(f => ({ ...f, image_url: e.target.value }))} placeholder="https://..." className="bg-secondary border-border text-xs" />
+              <Label className="font-thai text-xs">รูปภาพ</Label>
+              <SocialImageUpload value={form.image_url} onChange={url => setForm(f => ({ ...f, image_url: url }))} />
             </div>
             <div className="grid grid-cols-2 gap-4">
               <div>
